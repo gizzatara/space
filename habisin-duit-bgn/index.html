@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habisin Duit BGN - Simulasi Belanja Imersif</title>
+
+    <!-- Google Fonts for Modern Styling & Receipt Monospace -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* Design Tokens & Theme Setup */
+        :root {
+            --bg-dark: #051126;
+            --bg-card: rgba(10, 27, 58, 0.65);
+            --border-color: rgba(176, 224, 230, 0.15);
+            --primary: #ff9ebb;
+            /* BGN Piggy Pink */
+            --primary-glow: rgba(255, 158, 187, 0.35);
+            --secondary: #ff9f3f;
+            /* BGN Logo Orange Accent */
+            --secondary-glow: rgba(255, 159, 63, 0.2);
+            --text-light: #f0f6ff;
+            --text-muted: #93a5c4;
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.3);
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(at 10% 10%, rgba(255, 158, 187, 0.09) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(255, 159, 63, 0.07) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(176, 224, 230, 0.04) 0px, transparent 70%);
+            background-attachment: fixed;
+            color: var(--text-light);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            padding-bottom: 5rem;
+            overflow-x: hidden;
+        }
+
+        /* Container & Layout */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Header / Hero Section */
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .logo-wrapper {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .site-logo {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(255, 158, 187, 0.25));
+            animation: floatLogo 6s ease-in-out infinite;
+        }
+
+        @keyframes floatLogo {
+
+            0%,
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-8px) rotate(2deg);
+            }
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            background: linear-gradient(135deg, var(--text-light) 30%, var(--primary) 70%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* Sticky Balance Board - Modern Glassmorphism */
+        .balance-board {
+            position: sticky;
+            top: 1rem;
+            z-index: 100;
+            background: rgba(13, 20, 35, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .balance-board.glow-green {
+            box-shadow: 0 10px 40px var(--primary-glow), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .balance-board.glow-red {
+            box-shadow: 0 10px 40px var(--red-glow), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .balance-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .balance-value {
+            font-family: var(--font-mono);
+            font-size: 3.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-shadow: 0 0 20px var(--primary-glow);
+            transition: color 0.3s ease;
+            word-wrap: break-word;
+        }
+
+        .balance-value.depleted {
+            color: var(--red);
+            text-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+        }
+
+        .balance-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 5px;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Shrinking Sticky Balance Board styles */
+        .balance-board.compact {
+            padding: 0.6rem 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 14px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .balance-board.compact .balance-label {
+            font-size: 0.75rem;
+            margin-bottom: 0.1rem;
+        }
+
+        .balance-board.compact .balance-value {
+            font-size: 2rem;
+        }
+
+        .balance-board.compact .progress-bar-container,
+        .balance-board.compact .balance-info {
+            display: none !important;
+        }
+
+        /* Two-Column App Content */
+        .app-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .app-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        /* Store Grid of Items */
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.2rem;
+        }
+
+        /* Item Card Design */
+        .item-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .item-card.has-quantity {
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .item-image-wrapper {
+            width: 100%;
+            aspect-ratio: 4 / 5;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .item-card:hover .item-image {
+            transform: scale(1.08);
+        }
+
+        .item-name {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.4rem;
+            min-height: 2.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.3;
+        }
+
+        .item-price {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            color: var(--secondary);
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+        }
+
+        /* Quantity controls: [-] [qty] [+] */
+        .item-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 6px;
+        }
+
+        .control-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-light);
+            font-size: 1.6rem;
+            /* ponytail: larger font for bigger button text */
+            width: 48px;
+            /* ponytail: increased from 38px */
+            height: 48px;
+            /* ponytail: increased from 38px */
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+
+        .control-btn.btn-sub {
+            color: var(--red);
+        }
+
+        .control-btn.btn-sub:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .control-btn.btn-add {
+            color: var(--primary);
+        }
+
+        .control-btn.btn-add:hover:not(:disabled) {
+            background: rgba(255, 158, 187, 0.15);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+        }
+
+        .qty-display {
+            width: 60px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-light);
+            user-select: none;
+        }
+
+        /* Sidebar Container */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Card Container in Sidebar */
+        .sidebar-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        /* Custom Item Creation Form */
+        .custom-item-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-group input,
+        .form-group select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.7rem 0.9rem;
+            color: var(--text-light);
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .form-group input.price-input {
+            font-family: var(--font-mono);
+        }
+
+        .form-helper {
+            font-size: 0.8rem;
+            color: var(--secondary);
+            margin-top: 0.2rem;
+            font-family: var(--font-mono);
+            min-height: 1.2rem;
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: #000;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            background: #e07a97;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        /* Thermal Receipt Design */
+        .receipt-container {
+            background: #fdfdfa;
+            /* Authentic off-white paper texture */
+            color: #222;
+            /* Dark ink */
+            padding: 1rem 0.75rem;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.05);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            position: relative;
+            border-bottom: 8px dotted #ccc;
+            /* Jagged paper rip */
+        }
+
+        .receipt-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: repeating-linear-gradient(90deg, #e5e5d8 0px, #e5e5d8 10px, transparent 10px, transparent 20px);
+        }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .receipt-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.15rem;
+        }
+
+        .receipt-meta {
+            font-size: 0.58rem;
+            color: #555;
+            line-height: 1.3;
+        }
+
+        .receipt-divider {
+            border-top: 1px dashed #444;
+            margin: 0.4rem 0;
+        }
+
+        .receipt-item-name {
+            font-weight: bold;
+            margin-top: 0.3rem;
+        }
+
+        .receipt-item-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            margin-bottom: 0.3rem;
+            line-height: 1.3;
+        }
+
+        .receipt-item-details {
+            font-size: 0.58rem;
+            color: #555;
+        }
+
+        .receipt-totals {
+            margin-top: 0.6rem;
+            font-weight: 700;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .receipt-total-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .receipt-grand-total {
+            font-size: 0.75rem;
+        }
+
+        .receipt-sub-info {
+            color: #666;
+            font-size: 0.58rem;
+        }
+
+        .receipt-sub-info:first-of-type {
+            margin-top: 0.15rem;
+        }
+
+        .receipt-footer {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.58rem;
+            color: #444;
+            line-height: 1.3;
+        }
+
+        .empty-receipt-msg {
+            text-align: center;
+            color: #777;
+            padding: 1.5rem 0;
+            font-style: italic;
+        }
+
+        /* Action Buttons */
+        .sidebar-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-action {
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-print {
+            background: var(--secondary);
+            color: #000;
+        }
+
+        .btn-print:hover:not(:disabled) {
+            background: #d97706;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+        }
+
+        .btn-print:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-light);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Modal/Notification Alert Banner */
+        .alert-banner {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 200;
+            background: rgba(16, 185, 129, 0.95);
+            color: #000;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            font-weight: 600;
+            transform: translateY(150%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-banner.show {
+            transform: translateY(0);
+        }
+
+        /* AI Roaster Design styling */
+        .ai-container {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .ai-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--primary-glow);
+            border: 1px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            flex-shrink: 0;
+            box-shadow: 0 0 10px var(--primary-glow);
+            user-select: none;
+        }
+
+        .ai-speech-bubble {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 0 16px 16px 16px;
+            padding: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.45;
+            color: var(--text-light);
+            flex-grow: 1;
+            min-height: 50px;
+            position: relative;
+        }
+
+        .ai-speech-bubble::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -8px;
+            border-width: 0 8px 8px 0;
+            border-style: solid;
+            border-color: transparent var(--border-color);
+            display: block;
+            width: 0;
+        }
+
+        .ai-speech-bubble.loading {
+            animation: pulse-glow-ai 1.5s infinite ease-in-out;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        @keyframes pulse-glow-ai {
+
+            0%,
+            100% {
+                border-color: var(--border-color);
+                box-shadow: 0 0 2px rgba(16, 185, 129, 0.05);
+            }
+
+            50% {
+                border-color: var(--primary);
+                box-shadow: 0 0 12px var(--primary-glow);
+            }
+        }
+
+        /* ------------------------------------------------------------- */
+        /* PRINT STYLES - Crucial for "bisa di print langsung" requirement */
+        /* ------------------------------------------------------------- */
+        @media print {
+            @page {
+                size: 80mm auto;
+                /* Standard thermal receipt size */
+                margin: 0;
+            }
+
+            body {
+                background: #fff !important;
+                color: #000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                min-height: auto !important;
+            }
+
+            .container {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+
+            /* Hide EVERYTHING except the receipt container */
+            header,
+            .balance-board,
+            .app-grid> :not(.sidebar),
+            .sidebar> :not(#receipt-section),
+            #receipt-section>.section-title,
+            .sidebar-actions,
+            #share-btn,
+            #save-db-btn,
+            .receipt-container::before,
+            /* Remove gradient borders */
+            .alert-banner,
+            footer.site-footer {
+                display: none !important;
+            }
+
+            .app-grid,
+            .sidebar,
+            .sidebar-card {
+                display: block !important;
+            }
+
+            .sidebar {
+                gap: 0 !important;
+            }
+
+            .sidebar-card {
+                background: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+                backdrop-filter: none !important;
+            }
+
+            .receipt-container {
+                box-shadow: none !important;
+                border-bottom: none !important;
+                width: 100% !important;
+                max-width: 80mm !important;
+                /* Perfect standard width for cash receipt roll */
+                margin: 0 auto !important;
+                padding: 2mm 1mm !important;
+                background: #fff !important;
+                color: #000 !important;
+                font-size: 8px !important;
+                line-height: 1.2 !important;
+            }
+
+            .receipt-header {
+                margin-bottom: 4px !important;
+            }
+
+            .receipt-title {
+                font-size: 10px !important;
+                margin-bottom: 1px !important;
+            }
+
+            .receipt-meta {
+                font-size: 7.5px !important;
+                line-height: 1.2 !important;
+            }
+
+            .receipt-divider {
+                border-top: 1px dashed #000 !important;
+                margin: 2px 0 !important;
+            }
+
+            .receipt-item-name {
+                font-size: 8px !important;
+                margin-top: 2px !important;
+            }
+
+            .receipt-item-row {
+                margin-bottom: 1px !important;
+                line-height: 1.2 !important;
+            }
+
+            .receipt-item-details {
+                font-size: 7.5px !important;
+            }
+
+            .receipt-totals {
+                margin-top: 4px !important;
+                gap: 1px !important;
+            }
+
+            .receipt-total-row {
+                font-size: 8px !important;
+            }
+
+            .receipt-grand-total {
+                font-size: 9px !important;
+            }
+
+            .receipt-sub-info {
+                font-size: 7px !important;
+                color: #000 !important;
+            }
+
+            .receipt-sub-info:first-of-type {
+                margin-top: 1px !important;
+            }
+
+            .receipt-footer {
+                margin-top: 6px !important;
+                font-size: 7.5px !important;
+                line-height: 1.2 !important;
+            }
+
+            .receipt-donation-callout {
+                margin: 2px 0 !important;
+                padding: 3px !important;
+                font-size: 7px !important;
+            }
+
+            .receipt-donation-callout button {
+                display: none !important;
+            }
+        }
+
+        /* Mobile Responsiveness Rules */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem 0.8rem;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            header p {
+                font-size: 0.95rem;
+            }
+
+            .balance-board {
+                position: sticky !important;
+                top: 0.5rem !important;
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+                border-radius: 14px;
+                z-index: 100;
+            }
+
+            .balance-board.compact {
+                padding: 0.4rem 0.8rem !important;
+                margin-bottom: 1rem;
+            }
+
+            .balance-board.compact .balance-label {
+                font-size: 0.65rem;
+                margin-bottom: 0px;
+            }
+
+            .balance-board.compact .balance-value {
+                font-size: 1.3rem !important;
+            }
+
+            .balance-value {
+                font-size: 1.8rem;
+            }
+
+            .balance-info {
+                font-size: 0.8rem;
+                flex-direction: column;
+                gap: 0.3rem;
+                align-items: center;
+            }
+
+            .store-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.8rem;
+            }
+
+            .item-card {
+                padding: 0.8rem;
+                border-radius: 12px;
+            }
+
+            .item-image-wrapper {
+                height: auto;
+                margin-bottom: 0.6rem;
+                border-radius: 8px;
+            }
+
+            .item-name {
+                font-size: 0.9rem;
+                min-height: 2.4rem;
+                margin-bottom: 0.2rem;
+            }
+
+            .item-price {
+                font-size: 0.85rem;
+                margin-bottom: 0.8rem;
+            }
+
+            .item-controls {
+                padding: 4px;
+                border-radius: 10px;
+            }
+
+            .control-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 1.2rem;
+                border-radius: 8px;
+            }
+
+            .qty-display {
+                width: 30px;
+                font-size: 1rem;
+            }
+
+            .sidebar-card {
+                padding: 1rem;
+                border-radius: 12px;
+            }
+
+            .receipt-container {
+                padding: 0.8rem 0.6rem;
+            }
+
+            .alert-banner {
+                bottom: 1rem;
+                right: 1rem;
+                left: 1rem;
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+        /* Footer Styling */
+        footer.site-footer {
+            margin-top: 4rem;
+            padding: 2rem 0;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        footer.site-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        footer.site-footer a:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Header Info -->
+        <header>
+            <div class="logo-wrapper">
+                <img src="Babi Gendut National.png" alt="Babi Gendut National Logo" class="site-logo">
+            </div>
+            <h1>Habisin Duit BGN</h1>
+            <p> BGN (Babi Gendut National) memiliki UANG fantastis <strong>Rp 268 Triliun</strong>. Coba
+                habiskan
+                uang ini untuk belanja!</p>
+        </header>
+
+        <!-- Sticky Scoreboard Balance Board -->
+        <div class="balance-board" id="balance-board">
+            <div class="balance-label">Sisa Anggaran Belanja</div>
+            <div class="balance-value" id="balance-value">Rp 268.000.000.000.000</div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="balance-info">
+                <span id="spent-percentage">Terpakai: 0,0000%</span>
+                <span id="spent-absolute">Habis: Rp 0</span>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="app-grid">
+
+            <!-- Left Side: Store Catalog -->
+            <section>
+                <div class="section-title">
+                    🛍️ Toko Barang Mewah & Unik
+                </div>
+                <div class="store-grid" id="store-grid">
+                    <!-- Cards will be populated dynamically via JavaScript -->
+                </div>
+            </section>
+
+            <!-- Right Side: Receipt -->
+            <aside class="sidebar">
+
+                <!-- Auditor/Peninjau Card -->
+                <div class="sidebar-card">
+                    <div class="section-title" style="margin-bottom: 0.8rem; font-size: 1.3rem;">
+                        🕵️‍♂️ Auditor Anggaran BGN
+                    </div>
+                    <div class="ai-container">
+                        <div class="ai-avatar" id="ai-avatar-icon">🕵️‍♂️</div>
+                        <div class="ai-speech-bubble" id="ai-comment-text">
+                            Silakan belanja terlebih dahulu. Nanti saya audit kelayakan pengeluaran Anda!
+                        </div>
+                    </div>
+                    <button class="btn-submit" onclick="generateAIComment()"
+                        style="width: 100%; margin-top: 1rem; background: var(--secondary); color: #000;">
+                        📊 Audit Kelayakan Belanja
+                    </button>
+                </div>
+
+                <!-- Receipt Output -->
+                <div class="sidebar-card" id="receipt-section">
+                    <div class="section-title" style="margin-bottom: 0.8rem; font-size: 1.3rem;">
+                        📄 Struk Belanjaan Resmi
+                    </div>
+
+
+
+                    <div class="receipt-container" id="receipt-box">
+                        <!-- Receipt content will be populated dynamically via JavaScript -->
+                    </div>
+
+                    <div class="sidebar-actions">
+                        <button class="btn-action btn-print" id="print-btn" onclick="printReceipt()">
+                            🖨️ Cetak Struk
+                        </button>
+                        <button class="btn-action btn-reset" id="reset-btn" onclick="resetCart()">
+                            🔄 Reset
+                        </button>
+                    </div>
+                    <button class="btn-submit" id="share-btn" onclick="shareReceipt()"
+                        style="width: 100%; margin-top: 1rem; background: var(--primary); color: #000;">
+                        🔗 Bagikan Struk Belanjaan
+                    </button>
+                </div>
+
+            </aside>
+
+        </div>
+
+        <footer class="site-footer">
+            <p>Dibuat dengan ❤️ oleh <a href="https://instagram.com/gizzatara" target="_blank"
+                    rel="noopener noreferrer">gizzatara</a> (IG: <a href="https://instagram.com/gizzatara"
+                    target="_blank" rel="noopener noreferrer">@gizzatara</a>) • Dikembangkan bersama <strong>Google
+                    Antigravity</strong> • Terinspirasi dari <a href="https://neal.fun/spend/" target="_blank"
+                    rel="noopener noreferrer">neal.fun/spend</a></p>
+        </footer>
+
+    </div>
+
+    <script>
+        // TOTAL BUDGET: Rp 268 Triliun
+        const TOTAL_BUDGET = 268000000000000;
+
+        // Initial state load
+        let items = [
+            { id: 1, name: "Kapal Pesiar", price: 73000000000000, image: "aset/kapal pesiar.png" },
+            { id: 2, name: "Kylian Mbappé", price: 3660000000000, image: "aset/Mbappe.png" },
+            { id: 3, name: "Boeing 737", price: 2100000000000, image: "aset/Boeing.png" },
+            { id: 4, name: "Mobil Ford", price: 1960000000000, image: "aset/Ford.png" },
+            { id: 5, name: "Falcon 9", price: 1130000000000, image: "aset/Falcon 9.png" },
+            { id: 6, name: "Helikopter Black Hawk", price: 409000000000, image: "aset/Helicopter.png" },
+            { id: 7, name: "Tank Leopard", price: 260000000000, image: "aset/Tank.png" },
+            { id: 8, name: "bikin Patung Liberty", price: 164000000000, image: "aset/Liberty.png" },
+            { id: 9, name: "bikin Film Jumbo", price: 70000000000, image: "aset/Jumbo.png" },
+            { id: 10, name: "Sawah 1 Hektar", price: 7500000000, image: "aset/sawah.png" },
+            { id: 11, name: "Rolex Daytona", price: 700000000, image: "aset/Rolex.png" },
+            { id: 12, name: "undang Dewa 19", price: 530000000, image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=300&auto=format&fit=crop&q=80" },
+            { id: 13, name: "Franchise Gacoan", price: 625000000, image: "aset/Gacoan.png" },
+            { id: 14, name: "Rumah", price: 435000000, image: "aset/rumah.png" },
+            { id: 15, name: "Photocard Zee JKT48 (Super Rare)", price: 1500000, image: "aset/Photocard.png" },
+            { id: 16, name: "iPhone 17 Pro Max", price: 45200000, image: "aset/iphone.png" },
+            { id: 17, name: "Air Jordan 5", price: 3500000, image: "aset/air jordan.png" },
+            { id: 18, name: "Langganan Netflix Setahun", price: 2200000, image: "https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=80" },
+            { id: 19, name: "Makan di Restoran (1 porsi)", price: 90000, image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300&auto=format&fit=crop&q=80" },
+            { id: 20, name: "Suntoyo premium drink 600ml", price: 65000, image: "aset/suntoyo.png" },
+            { id: 21, name: "Sandal Jepit", price: 15000, image: "aset/sandal jepit.png" },
+            { id: 22, name: "Mie Ayam Kurowo (1 porsi)", price: 12000, image: "aset/miayam.png" },
+            { id: 23, name: "Pentol Corah (1 porsi)", price: 6000, image: "aset/pentol.png" },
+            { id: 24, name: "Es Teh Jumbo", price: 4000, image: "aset/esteh.png" },
+            { id: 25, name: "Kembalikan ke Dana Pendidikan", price: 100000000000, image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=300&auto=format&fit=crop&q=80" }
+        ];
+
+        // Sort cheapest to most expensive (ascending)
+        items.sort((a, b) => a.price - b.price);
+
+        // Shopping Cart state: { itemId: quantity }
+        let cart = {};
+
+        // Animation balance values
+        let currentDisplayBalance = TOTAL_BUDGET;
+        let targetBalance = TOTAL_BUDGET;
+        let balanceAnimationId = null;
+
+        // format helper: short terms like "Triliun", "Miliar", "Juta"
+        function formatRupiahShort(value) {
+            if (value >= 1e12) {
+                return 'Rp ' + (value / 1e12).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' Triliun';
+            }
+            if (value >= 1e9) {
+                return 'Rp ' + (value / 1e9).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' Miliar';
+            }
+            if (value >= 1e6) {
+                return 'Rp ' + (value / 1e6).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' Juta';
+            }
+            return 'Rp ' + value.toLocaleString('id-ID');
+        }
+
+        // format helper: exact numbers e.g. Rp 268.000.000.000.000
+        function formatRupiahFull(value) {
+            return 'Rp ' + Math.round(value).toLocaleString('id-ID');
+        }
+
+        let globalStats = {};
+        let hasCelebrated = false;
+
+        async function fetchGlobalStats() {
+            try {
+                const response = await fetch('/api/stats');
+                if (response.ok) {
+                    const data = await response.json();
+                    globalStats = data.stats || {};
+                    renderStore(); // Re-render with stats
+                }
+            } catch (err) {
+                console.error('Gagal mengambil statistik global:', err);
+            }
+        }
+
+        function getSpentWithoutDonation() {
+            let total = 0;
+            for (let itemId in cart) {
+                const item = items.find(i => i.id == itemId);
+                if (item && item.id != 99) {
+                    total += item.price * cart[itemId];
+                }
+            }
+            return total;
+        }
+
+        // Calculate total expenditure
+        function getSpentTotal() {
+            let total = 0;
+            for (let itemId in cart) {
+                const item = items.find(i => i.id == itemId);
+                if (item && item.id != 99) {
+                    total += item.price * cart[itemId];
+                }
+            }
+            if (cart[99]) {
+                const donationItem = items.find(i => i.id === 99);
+                const remainingBeforeDonation = TOTAL_BUDGET - total;
+                if (donationItem) {
+                    donationItem.price = remainingBeforeDonation;
+                }
+                total += remainingBeforeDonation;
+            }
+            return total;
+        }
+
+        // Update top sticky balance board displays
+        function updateBalanceDisplay() {
+            const balanceEl = document.getElementById('balance-value');
+            const progressEl = document.getElementById('progress-bar');
+            const percentageEl = document.getElementById('spent-percentage');
+            const absoluteEl = document.getElementById('spent-absolute');
+            const boardEl = document.getElementById('balance-board');
+
+            const spent = TOTAL_BUDGET - currentDisplayBalance;
+            const percentage = (spent / TOTAL_BUDGET) * 100;
+
+            balanceEl.textContent = formatRupiahFull(currentDisplayBalance);
+            progressEl.style.width = percentage + '%';
+
+            // Format percentage beautifully with 6 decimals for micro-purchases
+            percentageEl.textContent = 'Terpakai: ' + percentage.toLocaleString('id-ID', {
+                minimumFractionDigits: 4,
+                maximumFractionDigits: 6
+            }) + '%';
+
+            absoluteEl.textContent = 'Habis: ' + formatRupiahFull(spent);
+
+            // Add classes based on visual feedback triggers
+            if (currentDisplayBalance <= 0) {
+                balanceEl.classList.add('depleted');
+
+                // Trigger celebration
+                if (!hasCelebrated && spent >= TOTAL_BUDGET - 1) {
+                    triggerCelebration();
+                    hasCelebrated = true;
+                }
+            } else {
+                balanceEl.classList.remove('depleted');
+                if (hasCelebrated) {
+                    // Restore default states if they refund money or reset
+                    const logoEl = document.querySelector('.site-logo');
+                    const avatar = document.getElementById('ai-avatar-icon');
+                    if (logoEl) {
+                        logoEl.src = 'Babi Gendut National.png';
+                        logoEl.style.mixBlendMode = 'normal';
+                    }
+                    if (avatar) {
+                        avatar.style.background = '';
+                        avatar.style.border = '';
+                        avatar.innerHTML = '🕵️‍♂️';
+                    }
+                    hasCelebrated = false;
+                }
+            }
+        }
+
+        function triggerCelebration() {
+            if (typeof confetti === 'function') {
+                const duration = 15 * 1000;
+                const animationEnd = Date.now() + duration;
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
+
+                window.confettiInterval = setInterval(function() {
+                    const timeLeft = animationEnd - Date.now();
+                    if (timeLeft <= 0) {
+                        return clearInterval(window.confettiInterval);
+                    }
+                    const particleCount = 50 * (timeLeft / duration);
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
+                }, 250);
+            }
+
+            const bubbleText = document.getElementById('ai-comment-text');
+            const avatar = document.getElementById('ai-avatar-icon');
+            const logoEl = document.querySelector('.site-logo');
+
+            if (bubbleText) {
+                let totalDonasi = 0;
+                let totalBelanja = 0;
+                Object.keys(cart).forEach(itemId => {
+                    const item = items.find(i => i.id == itemId);
+                    if (item) {
+                        const cost = item.price * cart[itemId];
+                        if (itemId == 25) {
+                            totalDonasi += cost;
+                        } else {
+                            totalBelanja += cost;
+                        }
+                    }
+                });
+
+                if (totalDonasi > totalBelanja) {
+                    bubbleText.textContent = "Wah, luar biasa! Walaupun anggaran BGN habis, Anda mengembalikannya lebih banyak ke Dana Pendidikan daripada foya-foya. Terima kasih orang baik! 🙏 Ingat, uang BGN ini diambil dari dana pendidikan anak bangsa, jadi memang sudah semestinya dikembalikan.";
+                } else {
+                    bubbleText.textContent = "Luar biasa! Anggaran BGN Rp 268 Triliun habis tak tersisa. Anda adalah sang legenda belanja! Tapi ingat ya, uang BGN ini pada dasarnya diambil dari dana pendidikan, jadi ke depannya mending dikembalikan saja untuk pendidikan anak bangsa. 😅";
+                }
+            }
+            if (avatar) {
+                avatar.style.background = 'transparent';
+                avatar.style.border = 'none';
+                avatar.innerHTML = `<img src="aset/babimenari.gif" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; mix-blend-mode: screen; filter: contrast(1.2);">`;
+            }
+            if (logoEl) {
+                logoEl.src = 'aset/babimenari.gif';
+                logoEl.style.mixBlendMode = 'screen';
+                logoEl.style.filter = 'contrast(1.2)';
+            }
+
+            // Show fullscreen pig overlay
+            const pigOverlay = document.getElementById('pig-overlay');
+            if (pigOverlay) {
+                pigOverlay.style.display = 'flex';
+            }
+
+            // Play celebration audio with fade-in
+            if (!window.celebrationAudio) {
+                window.celebrationAudio = new Audio('Putar Perayaan.mp3');
+                window.celebrationAudio.loop = true;
+            }
+            window.celebrationAudio.volume = 0;
+            window.celebrationAudio.play().catch(e => console.log('Audio autoplay prevented:', e));
+            
+            clearInterval(window.audioFadeInterval);
+            window.audioFadeInterval = setInterval(() => {
+                if (window.celebrationAudio.volume < 0.95) {
+                    window.celebrationAudio.volume += 0.05;
+                } else {
+                    window.celebrationAudio.volume = 1;
+                    clearInterval(window.audioFadeInterval);
+                }
+            }, 100);
+        }
+
+        // Smooth balance ticker animation loop
+        function animateBalance() {
+            const diff = targetBalance - currentDisplayBalance;
+            if (Math.abs(diff) < 0.1) {
+                currentDisplayBalance = targetBalance;
+                updateBalanceDisplay();
+                cancelAnimationFrame(balanceAnimationId);
+                balanceAnimationId = null;
+                return;
+            }
+
+            // ponytail: simple damping calculation that feels smooth
+            currentDisplayBalance += diff * 0.15;
+            updateBalanceDisplay();
+            balanceAnimationId = requestAnimationFrame(animateBalance);
+        }
+
+        function triggerBalanceUpdate(newBalance) {
+            targetBalance = newBalance;
+            if (!balanceAnimationId) {
+                balanceAnimationId = requestAnimationFrame(animateBalance);
+            }
+
+            // Visual board pulsing glow logic
+            const board = document.getElementById('balance-board');
+            board.classList.remove('glow-green', 'glow-red');
+            void board.offsetWidth; // Trigger reflow to restart CSS transitions
+
+            if (newBalance < targetBalance) {
+                board.classList.add('glow-red'); // Deducting money
+            } else {
+                board.classList.add('glow-green'); // Reclaiming money
+            }
+            setTimeout(() => {
+                board.classList.remove('glow-green', 'glow-red');
+            }, 800);
+        }
+
+        // Render Store Catalog Grid
+        function renderStore() {
+            const storeGrid = document.getElementById('store-grid');
+            const remainingWithoutDonation = TOTAL_BUDGET - getSpentWithoutDonation();
+
+            storeGrid.innerHTML = '';
+
+            items.forEach(item => {
+                const qty = cart[item.id] || 0;
+                const canAdd = item.id === 99 ? (qty === 0 && remainingWithoutDonation > 0) : (remainingWithoutDonation >= item.price);
+
+                const card = document.createElement('div');
+                card.className = 'item-card' + (qty > 0 ? ' has-quantity' : '');
+
+                const soldCount = globalStats[item.id] || 0;
+                const soldCountHTML = soldCount > 0
+                    ? `<div class="item-sold-count" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.6rem;">Terjual Global: ${soldCount.toLocaleString('id-ID')} pcs</div>`
+                    : '';
+
+                card.innerHTML = `
+                    <div class="item-image-wrapper"><img class="item-image" src="${item.image}" alt="${item.name}" loading="lazy"></div>
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-price">${formatRupiahShort(item.price)}</div>
+                    ${soldCountHTML}
+                    <div class="item-controls">
+                        <button class="control-btn btn-sub" onclick="changeQty(${item.id}, -1)" ${qty <= 0 ? 'disabled' : ''}>-</button>
+                        <span class="qty-display">${qty}</span>
+                        <button class="control-btn btn-add" onclick="changeQty(${item.id}, 1)" ${!canAdd ? 'disabled' : ''}>+</button>
+                    </div>
+                `;
+                storeGrid.appendChild(card);
+            });
+
+            // Keep print, save database and share buttons enabled/disabled state synced
+            const isCartEmpty = Object.keys(cart).length === 0;
+            document.getElementById('print-btn').disabled = isCartEmpty;
+            document.getElementById('share-btn').disabled = isCartEmpty;
+
+            const saveDbBtn = document.getElementById('save-db-btn');
+            if (saveDbBtn) {
+                saveDbBtn.disabled = isCartEmpty;
+                if (isCartEmpty) {
+                    saveDbBtn.innerHTML = "💾 Simpan Transaksi Ke Database";
+                }
+            }
+        }
+
+        // Change quantity by delta (+1 / -1)
+        window.changeQty = function (itemId, delta) {
+            if (itemId === 99 && delta > 0) return; // Can't add more than 1 donation manually
+
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            const currentQty = cart[itemId] || 0;
+            let newQty = currentQty + delta;
+            if (newQty < 0) newQty = 0;
+
+            const currentSpentWithoutDonation = getSpentWithoutDonation();
+            const prospectiveSpentWithoutDonation = currentSpentWithoutDonation - (currentQty * (item.id === 99 ? 0 : item.price)) + (newQty * (item.id === 99 ? 0 : item.price));
+
+            if (prospectiveSpentWithoutDonation > TOTAL_BUDGET) {
+                const maxAffordableQty = currentQty + Math.floor((TOTAL_BUDGET - currentSpentWithoutDonation) / item.price);
+                newQty = maxAffordableQty;
+            }
+
+            if (newQty === 0) {
+                delete cart[itemId];
+                if (itemId === 99) {
+                    items = items.filter(i => i.id !== 99);
+                }
+            } else {
+                cart[itemId] = newQty;
+            }
+
+            // Sync targets and render
+            triggerBalanceUpdate(TOTAL_BUDGET - getSpentTotal());
+            renderStore();
+            renderReceipt();
+        };
+
+        // Reset all shopping activities
+        window.resetCart = function () {
+            cart = {};
+            items = items.filter(i => i.id !== 99);
+            triggerBalanceUpdate(TOTAL_BUDGET);
+            renderStore();
+            renderReceipt();
+        };
+
+        // Render Thermal Paper Receipt Layout
+        function renderReceipt() {
+            const receiptBox = document.getElementById('receipt-box');
+            const cartItems = Object.keys(cart);
+            const customerNameInput = document.getElementById('customer-name');
+            const customerName = customerNameInput && customerNameInput.value.trim() !== '' ? customerNameInput.value.trim().toUpperCase() : 'UMUM';
+
+            if (cartItems.length === 0) {
+                receiptBox.innerHTML = `
+                    <div class="receipt-header">
+                        <div class="receipt-title">HABISIN DUIT BGN</div>
+                        <div class="receipt-meta">KASIR: BABI GENDUT<br>WAKTU: ${new Date().toLocaleString('id-ID')}</div>
+                    </div>
+                    <div class="receipt-divider"></div>
+                    <div class="empty-receipt-msg">Belum ada barang di keranjang.<br>Ayo habiskan uang Rp 268 Triliun!</div>
+                    <div class="receipt-divider"></div>
+                      <div class="receipt-footer">
+                        KEMBALIAN: Rp 268.000.000.000.000<br>
+                        "Ayo belanja sekarang!"<br><br>
+                        @gizzatara<br>
+                        BARENG Antigravity AI
+                    </div>
+                `;
+                return;
+            }
+
+            let receiptHTML = `
+                <div class="receipt-header">
+                    <div class="receipt-title">HABISIN DUIT BGN</div>
+                    <div class="receipt-meta">KASIR: BABI GENDUT<br>WAKTU: ${new Date().toLocaleString('id-ID')}</div>
+                </div>
+                <div class="receipt-divider"></div>
+            `;
+
+            let subtotal = 0;
+            cartItems.forEach(itemId => {
+                const item = items.find(i => i.id == itemId);
+                const qty = cart[itemId];
+                const totalItemPrice = item.price * qty;
+                subtotal += totalItemPrice;
+
+                receiptHTML += `
+                    <div class="receipt-item-name">${item.name}</div>
+                    <div class="receipt-item-row">
+                        <div class="receipt-item-details">
+                            ${qty.toLocaleString('id-ID')} Pcs x ${formatRupiahFull(item.price)}
+                        </div>
+                        <div>${formatRupiahFull(totalItemPrice)}</div>
+                    </div>
+                `;
+            });
+
+            const remaining = TOTAL_BUDGET - subtotal;
+            const percentageUsed = (subtotal / TOTAL_BUDGET) * 100;
+
+            receiptHTML += `
+                <div class="receipt-divider"></div>
+                <div class="receipt-totals">
+                    <div class="receipt-total-row">
+                        <div>SUBTOTAL:</div>
+                        <div>${formatRupiahFull(subtotal)}</div>
+                    </div>
+                    <div class="receipt-total-row">
+                        <div>PAJAK (0%):</div>
+                        <div>Rp 0</div>
+                    </div>
+                    <div class="receipt-divider"></div>
+                    <div class="receipt-total-row receipt-grand-total">
+                        <div>TOTAL BELANJA:</div>
+                        <div>${formatRupiahFull(subtotal)}</div>
+                    </div>
+                    <div class="receipt-total-row receipt-sub-info">
+                        <div>SISA SALDO BGN:</div>
+                        <div>${formatRupiahFull(remaining)}</div>
+                    </div>
+                    <div class="receipt-total-row receipt-sub-info">
+                        <div>PERSENTASE TERPAKAI:</div>
+                        <div>${percentageUsed.toLocaleString('id-ID', { minimumFractionDigits: 4, maximumFractionDigits: 6 })}%</div>
+                    </div>
+                </div>
+                <div class="receipt-divider"></div>
+            `;
+
+            if (remaining > 0 && !cart[99]) {
+                receiptHTML += `
+                    <div class="receipt-donation-callout" style="text-align: center; background: rgba(255, 159, 63, 0.08); border: 1px dashed var(--secondary); padding: 0.6rem; border-radius: 8px; margin: 0.5rem 0; font-size: 0.65rem; color: #222; line-height: 1.45;">
+                        💡 Sisa saldo banyak?<br>Donasikan sisa <strong>${formatRupiahShort(remaining)}</strong> untuk memajukan Pendidikan!<br>
+                        <button onclick="donateRemaining()" style="margin-top: 0.5rem; background: var(--secondary); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: var(--font-main); font-size: 0.65rem; transition: background 0.2s;">🎓 Donasikan Sekarang</button>
+                    </div>
+                    <div class="receipt-divider"></div>
+                `;
+            }
+
+            receiptHTML += `
+                <div class="receipt-footer">
+                    PEMBAYARAN: Pokoknya ada<br>
+                    --- LUNAS ---<br><br>
+                    ${remaining > 0
+                    ? 'Uang BGN masih sisa banyak, beli lagi!'
+                    : 'Hebat! Anda berhasil menghabiskan anggaran BGN Rp 268 Triliun!'}<br><br>
+                    @gizzatara<br>
+                    BARENG Antigravity AI<br>
+                    Terima kasih telah berkunjung.
+                </div>
+            `;
+
+            receiptBox.innerHTML = receiptHTML;
+        }
+
+        window.donateRemaining = function () {
+            const remaining = TOTAL_BUDGET - getSpentWithoutDonation();
+            if (remaining <= 0) return;
+
+            let donationItem = items.find(i => i.id === 99);
+            if (!donationItem) {
+                donationItem = {
+                    id: 99,
+                    name: "Donasi Pendidikan",
+                    price: remaining,
+                    image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=300&auto=format&fit=crop&q=80"
+                };
+                items.push(donationItem);
+            } else {
+                donationItem.price = remaining;
+            }
+
+            cart[99] = 1;
+
+            triggerBalanceUpdate(TOTAL_BUDGET - getSpentTotal());
+            renderStore();
+            renderReceipt();
+            alertToast("Terima kasih! Sisa anggaran didonasikan untuk pendidikan.");
+        };
+
+        window.saveToDatabase = async function () {
+            const cartItems = Object.keys(cart);
+            if (cartItems.length === 0) {
+                alertToast("Keranjang belanja kosong, ayo belanja dulu!");
+                return;
+            }
+
+            const itemsToSave = cartItems.map(itemId => {
+                const item = items.find(i => i.id == itemId);
+                return {
+                    id: item.id,
+                    name: item.name,
+                    qty: cart[itemId],
+                    price: item.price
+                };
+            });
+
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        items: itemsToSave,
+                        totalSpent: getSpentTotal()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+
+                alertToast("Transaksi berhasil disimpan ke Database!");
+
+                await fetchGlobalStats();
+            } catch (err) {
+                console.error(err);
+                alertToast("Gagal menyimpan ke database.");
+            }
+        };
+
+        window.printReceipt = async function () {
+            const cartItems = Object.keys(cart);
+            if (cartItems.length === 0) {
+                alertToast("Keranjang belanja kosong, ayo belanja dulu!");
+                return;
+            }
+
+            // Buka dialog print terlebih dahulu secara sinkron agar tidak diblokir browser
+            window.print();
+
+            const printBtn = document.getElementById('print-btn');
+            const originalText = printBtn ? printBtn.innerHTML : "🖨️ Cetak Struk";
+            if (printBtn) {
+                printBtn.disabled = true;
+                printBtn.innerHTML = "💾 Menyimpan ke DB...";
+            }
+
+            // Simpan ke database setelah print
+            await saveToDatabase();
+
+            if (printBtn) {
+                printBtn.innerHTML = originalText;
+                printBtn.disabled = false;
+            }
+        };
+
+        // Helper toast notification
+        function alertToast(msg) {
+            let toast = document.createElement('div');
+            toast.className = 'alert-banner show';
+            toast.style.background = 'var(--secondary)';
+            toast.style.color = '#000';
+            toast.innerHTML = `<span>${msg}</span>`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 2500);
+        }
+
+        // Call serverless endpoint to get AI commentary
+        window.generateAIComment = async function () {
+            const bubbleText = document.getElementById('ai-comment-text');
+            const avatar = document.getElementById('ai-avatar-icon');
+
+            const cartItems = Object.keys(cart);
+            if (cartItems.length === 0) {
+                bubbleText.innerHTML = 'Keranjang belanjaan Anda masih kosong. Silakan belanja dulu agar bisa saya audit!';
+                avatar.textContent = '🙄';
+                return;
+            }
+
+            // Gather item descriptions
+            let listText = "";
+            let totalPrice = 0;
+            cartItems.forEach(itemId => {
+                const item = items.find(i => i.id == itemId);
+                const qty = cart[itemId];
+                listText += `- ${item.name} (Jumlah: ${qty}, Harga Satuan: ${formatRupiahFull(item.price)})\n`;
+                totalPrice += item.price * qty;
+            });
+
+            // Set loading state
+            bubbleText.textContent = 'Sedang mengaudit rincian anggaran belanja belanjaan Anda...';
+            bubbleText.classList.add('loading');
+            avatar.textContent = '🕵️‍♂️';
+
+            try {
+                const response = await fetch('/api/roast', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        cartText: listText,
+                        totalPrice: formatRupiahFull(totalPrice)
+                    })
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(errText || `HTTP error ${response.status}`);
+                }
+
+                const data = await response.json();
+                const comment = data.comment;
+
+                // Remove loading
+                bubbleText.classList.remove('loading');
+
+                // Select dynamic emoji based on price spent
+                if (totalPrice > 10e12) {
+                    avatar.textContent = '😱';
+                } else if (totalPrice > 1e9) {
+                    avatar.textContent = '😏';
+                } else {
+                    avatar.textContent = '😂';
+                }
+
+                // Typewriter effect
+                typewrite(bubbleText, comment);
+
+            } catch (err) {
+                bubbleText.classList.remove('loading');
+                bubbleText.innerHTML = `<span style="color: var(--red);">Gagal melakukan audit anggaran: ${err.message}</span>`;
+                avatar.textContent = '❌';
+            }
+        };
+
+        // Typewriter effect function
+        function typewrite(element, text) {
+            element.textContent = '';
+            let i = 0;
+            function step() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(step, 18);
+                }
+            }
+            step();
+        }
+
+        // Initialize display
+        updateBalanceDisplay();
+        renderStore();
+        renderReceipt();
+        fetchGlobalStats();
+
+        // Handle scroll class toggling for compact header
+        window.addEventListener('scroll', () => {
+            const board = document.getElementById('balance-board');
+            if (window.scrollY > 80) {
+                board.classList.add('compact');
+            } else {
+                board.classList.remove('compact');
+            }
+        });
+
+        // Share receipt logic
+        window.shareReceipt = async function () {
+            const cartItems = Object.keys(cart);
+            if (cartItems.length === 0) {
+                alertToast("Keranjang belanja kosong, ayo belanja dulu!");
+                return;
+            }
+
+            let shareText = "💸 HABISIN DUIT BGN 💸\nSaya baru saja mensimulasikan belanja dengan anggaran BGN Rp 268 Triliun!\n\nBarang yang dibeli:\n";
+            let subtotal = 0;
+
+            cartItems.forEach(itemId => {
+                const item = items.find(i => i.id == itemId);
+                const qty = cart[itemId];
+                const totalItemPrice = item.price * qty;
+                subtotal += totalItemPrice;
+                shareText += `- ${qty} Pcs x ${item.name} (${formatRupiahShort(totalItemPrice)})\n`;
+            });
+
+            const remaining = TOTAL_BUDGET - subtotal;
+            shareText += `\nTotal Belanja: ${formatRupiahFull(subtotal)}`;
+            shareText += `\nSisa Saldo: ${formatRupiahFull(remaining)}`;
+            shareText += `\n\nCoba habiskan anggaran BGN versi kamu di: https://habisinduitbgn.web.app/`;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'Struk Belanja BGN',
+                        text: shareText,
+                        url: 'https://habisinduitbgn.web.app/'
+                    });
+                } catch (err) {
+                    console.log('Share cancelled or failed', err);
+                }
+            } else {
+                // Fallback to clipboard copy
+                try {
+                    await navigator.clipboard.writeText(shareText);
+                    alertToast("Struk berhasil disalin! Siap dibagikan.");
+                } catch (err) {
+                    alertToast("Gagal menyalin struk.");
+                }
+            }
+        };
+    </script>
+
+    <script>
+        function closePigOverlay() {
+            document.getElementById('pig-overlay').style.display='none';
+            if(window.confettiInterval) clearInterval(window.confettiInterval);
+            if(window.celebrationAudio) {
+                clearInterval(window.audioFadeInterval);
+                window.audioFadeInterval = setInterval(() => {
+                    if (window.celebrationAudio.volume > 0.05) {
+                        window.celebrationAudio.volume -= 0.05;
+                    } else {
+                        window.celebrationAudio.volume = 0;
+                        window.celebrationAudio.pause();
+                        window.celebrationAudio.currentTime = 0;
+                        clearInterval(window.audioFadeInterval);
+                    }
+                }, 100);
+            }
+        }
+    </script>
+    <!-- Fullscreen Pig Overlay -->
+    <div id="pig-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5,17,38,0.95); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(10px);">
+        <img src="aset/babimenari.gif" style="max-width: 90%; max-height: 70vh; mix-blend-mode: screen; margin-bottom: 2rem;">
+        <button onclick="closePigOverlay()" style="padding: 0.6rem 1.5rem; font-size: 1rem; border-radius: 50px; border: none; background: var(--primary); color: #000; font-weight: 800; cursor: pointer; filter: drop-shadow(0 0 10px var(--primary-glow));">Minimize 🐷</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</body>
+
+</html>
