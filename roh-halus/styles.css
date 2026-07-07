@@ -1,0 +1,497 @@
+/* --- Design System & Custom Properties --- */
+:root {
+    --bg-dark: #06060c;
+    --bg-panel: rgba(13, 13, 26, 0.45);
+    --border-light: rgba(255, 255, 255, 0.08);
+    --border-active: rgba(0, 242, 254, 0.3);
+    
+    --text-primary: #f0f4f9;
+    --text-secondary: #9aa0a6;
+    --text-dark: #5f6368;
+    
+    /* Neon gradients / Accent Colors */
+    --accent-glow-cyan: rgba(0, 242, 254, 0.6);
+    --accent-glow-magenta: rgba(79, 172, 254, 0.6);
+    --neon-blue: #00f2fe;
+    --neon-purple: #4facfe;
+    
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'Outfit', sans-serif;
+}
+
+/* --- Base Setup --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Hide Webcam Video */
+#webcam-video {
+    display: none;
+    position: absolute;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+
+/* Fullscreen Canvas */
+#webgl-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    touch-action: none;
+}
+
+/* --- Glassmorphism UI Layout --- */
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none; /* Let clicks pass to canvas */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2.5rem;
+}
+
+#ui-overlay * {
+    pointer-events: auto; /* Re-enable pointer events for UI controls */
+}
+
+/* App Header */
+.app-header {
+    margin-bottom: 2rem;
+    align-self: flex-start;
+}
+
+.glow-text {
+    font-family: var(--font-heading);
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px rgba(0, 242, 254, 0.2);
+    margin-bottom: 0.25rem;
+}
+
+.subtitle {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+/* Glass Panels */
+.glass-panel {
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-panel:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Mode Selector Panel */
+.mode-selector-panel {
+    align-self: flex-start;
+    width: 320px;
+    margin-top: 1rem;
+    margin-bottom: auto; /* Pushes the next elements down */
+}
+
+.mode-selector-panel h2 {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.mode-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 0.85rem 1.25rem;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: left;
+}
+
+.mode-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.mode-btn.active {
+    background: linear-gradient(135deg, rgba(0, 242, 254, 0.15), rgba(79, 172, 254, 0.15));
+    border-color: var(--neon-blue);
+    color: var(--neon-blue);
+    box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+}
+
+.mode-btn .icon {
+    font-size: 1.15rem;
+}
+
+/* Status Indicator */
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--neon-blue);
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--neon-blue);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--neon-blue);
+}
+
+.pulsing {
+    animation: pulse 1.5s infinite alternate;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.4; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 12px var(--neon-blue); }
+}
+
+/* System Stats Panel */
+.info-panel {
+    align-self: flex-start;
+    width: 320px;
+    margin-top: 2rem;
+}
+
+.info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.info-header h3 {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.stat-badge {
+    background: rgba(0, 242, 254, 0.1);
+    border: 1px solid var(--neon-blue);
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-family: var(--font-heading);
+    color: var(--neon-blue);
+    font-weight: 700;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+}
+
+.stat-val {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.divider {
+    height: 1px;
+    background: var(--border-light);
+    margin: 0.85rem 0;
+}
+
+.description {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    margin-bottom: 0.85rem;
+}
+
+.controls-hint {
+    font-size: 0.75rem;
+    color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.controls-hint strong {
+    color: var(--text-secondary);
+}
+
+/* --- Webcam Request Modal --- */
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(4, 4, 8, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 420px;
+    text-align: center;
+    padding: 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scaleUp {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.modal-content h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.modal-content p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+
+.action-btn {
+    flex: 1;
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    border: none;
+    border-radius: 8px;
+    padding: 0.85rem;
+    color: white;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 242, 254, 0.4);
+}
+
+.action-btn.secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    box-shadow: none;
+}
+
+.action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    box-shadow: none;
+}
+
+/* lil-gui Custom Styling for integration with dark/glass theme */
+.lil-gui {
+    --background-color: var(--bg-panel) !important;
+    --text-color: var(--text-primary) !important;
+    --title-background-color: rgba(255, 255, 255, 0.03) !important;
+    --widget-color: rgba(255, 255, 255, 0.08) !important;
+    --hover-color: rgba(255, 255, 255, 0.15) !important;
+    --focus-color: var(--neon-blue) !important;
+    --number-color: var(--neon-blue) !important;
+    --string-color: #8ab4f8 !important;
+    font-family: var(--font-body) !important;
+    font-size: 0.85rem !important;
+    border: 1px solid var(--border-light) !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+.lil-gui.root {
+    position: absolute !important;
+    top: 2.5rem !important;
+    right: 2.5rem !important;
+    z-index: 100 !important;
+}
+
+/* Toast Message */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: rgba(26, 13, 13, 0.9);
+    border: 1px solid rgba(255, 75, 75, 0.3);
+    color: #ff7b7b;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    pointer-events: auto;
+    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideIn {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.hidden {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* --- Mobile Styling --- */
+@media (max-width: 768px) {
+    #ui-overlay {
+        padding: 1.5rem;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 1rem;
+        overflow-y: auto;
+        pointer-events: auto; /* Enable scroll */
+    }
+    
+    .glow-text {
+        font-size: 1.75rem;
+    }
+    
+    .mode-selector-panel, .info-panel {
+        width: 100%;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+    
+    .lil-gui.root {
+        position: static !important;
+        width: 100% !important;
+    }
+}
+
+/* Toggle UI Button */
+#mobile-ui-toggle {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 200;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+#mobile-ui-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+    #mobile-ui-toggle {
+        bottom: 1.5rem;
+        right: 1.5rem;
+        width: 45px;
+        height: 45px;
+    }
+}
+
+/* --- HUD Hide Mode --- */
+body.hide-hud #ui-overlay,
+body.hide-hud .lil-gui {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}

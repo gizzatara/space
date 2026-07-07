@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roh Halus - Interactive GPGPU Particle Simulation</title>
+    <meta name="description" content="Experience a high-performance 3D GPU particle simulation in your browser. Features real-time curl noise flow, gravity attraction, and interactive webcam depth mirroring with 1 million+ particles.">
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Import Map for bare specifiers resolution -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js"
+        }
+    }
+    </script>
+</head>
+<body>
+    <!-- Hidden video element for webcam streaming -->
+    <video id="webcam-video" autoplay playsinline muted></video>
+
+    <!-- Interactive Canvas -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Main UI Overlay -->
+    <main id="ui-overlay">
+        <!-- Header -->
+        <header class="app-header">
+            <h1 class="glow-text">ROH HALUS</h1>
+            <p class="subtitle">WebGL2 GPU Particle Physics Experiment</p>
+        </header>
+
+        <!-- Mode Indicator / Selector -->
+        <section class="mode-selector-panel glass-panel">
+            <h2>Simulation Mode</h2>
+            <div class="mode-buttons">
+                <button id="btn-mouse-mode" class="mode-btn active" data-mode="mouse">
+                    <span class="icon">🖱️</span> Mouse Flow
+                </button>
+                <button id="btn-webcam-mode" class="mode-btn" data-mode="webcam">
+                    <span class="icon">📷</span> Webcam Mirror
+                </button>
+                <button id="btn-audio-mode" class="mode-btn" data-mode="audio">
+                    <span class="icon">🎤</span> Audio React
+                </button>
+            </div>
+            <div id="mode-status" class="status-indicator hidden">
+                <span class="status-dot pulsing"></span>
+                <span id="mode-status-text" class="status-text">Active</span>
+            </div>
+        </section>
+
+        <!-- Info Overlay -->
+        <section class="info-panel glass-panel">
+            <div class="info-header">
+                <h3>System Status</h3>
+                <span id="fps-counter" class="stat-badge">-- FPS</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Particles:</span>
+                <span id="particle-count" class="stat-val">262,144</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Engine:</span>
+                <span class="stat-val">Three.js WebGL2 GPGPU</span>
+            </div>
+            <div class="divider"></div>
+            <p class="description">
+                Physics forces are simulated in parallel on the GPU using Frame Buffer Objects (FBO) and ping-pong shading, rendering thousands of points at 60 FPS.
+            </p>
+            <div id="controls-hint" class="controls-hint">
+                <p>🖱️ <strong>Left Click + Drag:</strong> Rotate Orbit Camera</p>
+                <p>🖱️ <strong>Right Click + Drag:</strong> Pan Camera</p>
+                <p>📜 <strong>Scroll:</strong> Zoom In/Out</p>
+                <p>✨ <strong>Mouse Hover:</strong> Interact with particles</p>
+                <p>⌨️ <strong>Press "H":</strong> Toggle UI HUD (Hide / Show)</p>
+                <p>⌨️ <strong>Press "F" or Double-Click:</strong> Fullscreen Mode</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Permission Request Overlay -->
+    <div id="permission-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <span id="permission-icon" class="modal-icon">📷</span>
+            <h2 id="permission-title">Access Required</h2>
+            <p id="permission-desc">Please grant permission.</p>
+            <div class="modal-actions">
+                <button id="btn-allow-permission" class="action-btn">Request Access</button>
+                <button id="btn-cancel-permission" class="action-btn secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toggle UI Button for Touch / Mobile -->
+    <button id="mobile-ui-toggle" class="glass-panel" title="Toggle UI">👁️</button>
+
+    <!-- Alert / Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Main Entry Module Script -->
+    <script type="module" src="main.js"></script>
+</body>
+</html>
