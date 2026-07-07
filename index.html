@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gizzatara — Hybrid Designer & Creative Technologist</title>
+  <meta name="description"
+    content="Portfolio Gizzatara — Hybrid Designer dan Creative Technologist. Spesialis web immersive, multimedia, dan visual storytelling." />
+  <meta property="og:title" content="Gizzatara — Hybrid Designer" />
+  <meta property="og:description" content="Creative portfolio: immersive web experiences, 3D, & multimedia projects." />
+
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
+    rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- ===== NAV ===== -->
+  <nav id="navbar">
+    <span class="nav-logo">GIZZATARA</span>
+    <ul class="nav-links">
+      <li><a href="#about" id="nav-about">About</a></li>
+      <li><a href="#projects" id="nav-projects">Projects</a></li>
+      <li><a href="#contact" id="nav-contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <div class="hero-badge">✦ Hybrid Designer & Creative Technologist</div>
+      <h1 class="hero-title">Gizzatara</h1>
+      <p class="hero-sub">
+        Merancang ruang fisik dan digital — dari kurasi pameran seni, visual branding,
+        hingga eksperimen web interaktif.
+      </p>
+      <div class="hero-cta">
+        <a href="#projects" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+          Lihat Proyek
+        </a>
+        <a href="#contact" class="btn btn-ghost">Hubungi Saya</a>
+      </div>
+    </div>
+    <div class="scroll-hint">
+      <span>Scroll</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <!-- ===== ABOUT ===== -->
+  <section id="about">
+    <div class="container">
+      <div class="about-grid">
+        <!-- Left -->
+        <div>
+          <p class="section-label reveal">Tentang Saya</p>
+          <h2 class="section-title reveal">Saya Gizzatara —<br>Creative di persimpangan <em>seni, ruang, & teknologi.</em></h2>
+          <p class="about-p reveal">
+            Hybrid Designer berbasis di Madiun dengan ketertarikan kuat
+            pada pengalaman yang bisa dirasakan secara fisik dan emosional. Saya percaya
+            desain terbaik adalah yang memicu reaksi — bukan sekadar dilihat.
+          </p>
+          <p class="about-p reveal">
+            Saya juga aktif bergerak sebagai <strong>Direktur Program</strong> di <a
+              href="https://www.instagram.com/kongan.co/" target="_blank"
+              style="color: var(--accent); border-bottom: 2px dashed var(--accent);">Kongan Kooperatif</a>, sebuah
+            kolektif hibrida seni & kebudayaan di Madiun yang mengelola pameran seni, diskusi publik, dan residensi
+            riset budaya lokal.
+          </p>
+          <div class="skills-grid reveal">
+            <span class="skill-tag">Spatial Design (3D)</span>
+            <span class="skill-tag">Event Production</span>
+            <span class="skill-tag">Art Exhibition</span>
+            <span class="skill-tag">Visual Branding</span>
+            <span class="skill-tag">Web Immersive</span>
+            <span class="skill-tag">Three.js</span>
+            <span class="skill-tag">MediaPipe / AI</span>
+            <span class="skill-tag">3D / Blender</span>
+            <span class="skill-tag">Creative Coding</span>
+          </div>
+        </div>
+        <!-- Right: Stats -->
+        <div class="about-stats">
+          <div class="stat-card reveal">
+            <div class="stat-num">5+</div>
+            <div class="stat-label">Tahun pengalaman desain & multimedia</div>
+          </div>
+          <div class="stat-card reveal">
+            <div class="stat-num">3D</div>
+            <div class="stat-label">Simulasi tata ruang & layout panggung</div>
+          </div>
+          <div class="stat-card reveal">
+            <div class="stat-num">AI</div>
+            <div class="stat-label">Gesture control via MediaPipe & webcam</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PROJECTS ===== -->
+  <section id="projects">
+    <div class="container">
+      <p class="section-label reveal">Proyek</p>
+      <h2 class="section-title reveal">Yang Sudah Dibuat</h2>
+      <p class="section-sub reveal">
+        Kumpulan proyek interaktif — beberapa live di internet, beberapa masih dalam eksperimen.
+        Pilih sendiri mana yang mau dicoba.
+      </p>
+
+      <div class="projects-grid">
+
+        <!-- FEATURED: Pesawat Pesawatan -->
+        <div class="project-card featured reveal" style="cursor: default;">
+          <div class="project-thumb" style="background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);">
+            <div class="project-thumb-inner">🛩️</div>
+          </div>
+          <div class="project-body">
+            <div class="project-tags">
+              <span class="project-tag tag-purple">Three.js</span>
+              <span class="project-tag tag-blue">MediaPipe</span>
+              <span class="project-tag tag-green">WebGL</span>
+              <span class="project-tag tag-orange">Gesture Control</span>
+            </div>
+            <h3 class="project-name">Pesawat Pesawatan</h3>
+            <p class="project-desc">
+              Game terbang free-flight imersif di browser. Kendalikan biplane
+              mengelilingi dunia kecil menggunakan <strong>gestur badan & mulut</strong>
+              lewat webcam — tanpa controller, tanpa plugin. Ditenagai Three.js r160 +
+              MediaPipe PoseLandmarker & FaceLandmarker. Buka mulut = gas. 🤙
+            </p>
+            <div class="project-footer">
+              <span class="project-link" style="opacity: 0.5; color: var(--text-muted); cursor: default;">
+                Maintenance
+              </span>
+              <span class="project-status wip">🛠️ Maintenance</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Habisin Duit BGN -->
+        <div class="project-card reveal" onclick="window.open('https://habisinduitbgn.web.app', '_blank')">
+          <div class="project-thumb" style="background: url('habisin dut bgn thumnail.png') center/cover no-repeat;">
+          </div>
+          <div class="project-body">
+            <div class="project-tags">
+              <span class="project-tag tag-purple">Interactive Web</span>
+              <span class="project-tag tag-blue">Firebase</span>
+            </div>
+            <h3 class="project-name">Habisin Duit BGN</h3>
+            <p class="project-desc">
+              Simulasi interaktif belanja anggaran pemerintah. Experience
+              web yang engaging untuk memahami skala besar sebuah angka.
+            </p>
+            <div class="project-footer">
+              <a href="https://habisinduitbgn.web.app" target="_blank" class="project-link"
+                onclick="event.stopPropagation()">
+                Buka Live
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </a>
+              <span class="project-status live">● Live</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dukun Digital -->
+        <div class="project-card reveal" style="cursor: default;">
+          <div class="project-thumb" style="background: linear-gradient(135deg, #0d1f12, #14532d, #052e16);">
+            <div class="project-thumb-inner">🔮</div>
+          </div>
+          <div class="project-body">
+            <div class="project-tags">
+              <span class="project-tag tag-green">Interactive</span>
+              <span class="project-tag tag-blue">Firebase</span>
+            </div>
+            <h3 class="project-name">Dukun Digital</h3>
+            <p class="project-desc">
+              Pengalaman web mistis dan interaktif — ramalan digital dengan
+              estetika supernatural yang dibalut dalam interface modern yang tidak biasa.
+            </p>
+            <div class="project-footer">
+              <span class="project-link" style="opacity: 0.5; color: var(--text-muted); cursor: default;">
+                Maintenance
+              </span>
+              <span class="project-status wip">🛠️ Maintenance</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Samudera Harapan -->
+        <div class="project-card reveal" onclick="window.open('https://samudera-harapan.onrender.com/display.html', '_blank')">
+          <div class="project-thumb" style="background: url('samudera harapan.png') center/cover no-repeat;">
+          </div>
+          <div class="project-body">
+            <div class="project-tags">
+              <span class="project-tag tag-purple">Three.js</span>
+              <span class="project-tag tag-blue">WebSocket</span>
+              <span class="project-tag tag-green">Node.js</span>
+              <span class="project-tag tag-orange">Interactive 3D</span>
+            </div>
+            <h3 class="project-name">Samudera Harapan</h3>
+            <p class="project-desc">
+              Akuarium interaktif 3D pameran fisik di Pancer Pacitan. Pengunjung menggambar ikan & menulis doa di HP mereka, lalu mengirimkannya secara real-time ke layar display utama akuarium.
+            </p>
+            <div class="project-footer">
+              <a href="https://samudera-harapan.onrender.com/display.html" target="_blank" class="project-link"
+                onclick="event.stopPropagation()">
+                Buka Live
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </a>
+              <span class="project-status live">● Live</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slot "More Coming" -->
+        <div class="project-card reveal"
+          style="border-style: dashed; justify-content: center; align-items: center; min-height: 240px; text-align:center; padding: 40px; cursor: default; opacity: 0.6;">
+          <div style="font-size: 2rem; margin-bottom: 16px;">＋</div>
+          <p class="section-label" style="margin:0">Proyek selanjutnya</p>
+          <p style="font-size:13px; color: var(--text-muted); margin-top: 8px;">Beberapa masih dalam proses — <br>akan
+            ditambahkan segera.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONTACT ===== -->
+  <section id="contact">
+    <div class="container">
+      <div class="contact-card reveal">
+        <h2 class="contact-title">Mari Berkolaborasi</h2>
+        <p class="contact-sub">
+          Punya ide project immersive, branding, web interaktif, atau game? AYO BERKOLABORASI.
+        </p>
+        <div class="contact-links">
+          <a href="mailto:Gizzatara@gmail.com" class="btn btn-primary" id="btn-email">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="m22 7-10 7L2 7" />
+            </svg>
+            Email Saya
+          </a>
+          <a href="https://instagram.com/gizzatara" target="_blank" class="btn btn-ghost" id="btn-ig">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="20" rx="5" />
+              <circle cx="12" cy="12" r="5" />
+              <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+            </svg>
+            Instagram
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <p>© 2026 Gizzatara — Dibuat dengan maen maen Antigravity</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

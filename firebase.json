@@ -1,0 +1,13 @@
+{
+  "hosting": {
+    "site": "gizzatara",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "*.pdf",
+      "*.md"
+    ]
+  }
+}
