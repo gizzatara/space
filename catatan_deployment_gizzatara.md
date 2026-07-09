@@ -239,9 +239,10 @@ Setelah domain aktif, tambahkan DNS records di **Cloudflare Dashboard → DNS**:
 
 | Fase | Deskripsi | Status |
 |------|-----------|--------|
-| **1** | Deploy portfolio ke GitHub Pages | ⬜ Belum mulai |
-| **2** | Setting domain Hostinger → GitHub | ⬜ Belum mulai |
-| **3** | Pindah DNS ke Cloudflare | ⬜ Belum mulai |
+| **1** | Deploy portfolio ke GitHub Pages | ✅ Selesai |
+| **2** | Setting domain Hostinger → GitHub | ✅ Selesai |
+| **3** | Pindah DNS ke Cloudflare | ✅ Selesai |
+| **3.5** | Fix Sertifikat HTTPS / SSL | ✅ Selesai (9 Juli 2026) |
 | **4** | Setup Cloudflare Tunnel (backend laptop) | ⬜ Belum mulai |
 | **5** | Cleanup Firebase & finalisasi | ⬜ Belum mulai |
 
@@ -251,10 +252,10 @@ Setelah domain aktif, tambahkan DNS records di **Cloudflare Dashboard → DNS**:
 
 | Tool / Akun | Kegunaan | Status |
 |-------------|----------|--------|
-| **Git** | Version control | ❓ Cek dulu |
-| **GitHub** | Hosting kode + GitHub Pages | ❓ Cek dulu |
+| **Git** | Version control | ✅ Terinstall |
+| **GitHub** | Hosting kode + GitHub Pages | ✅ Aktif (gizzatara/space) |
 | **Hostinger** | Domain registrar | ✅ Sudah punya |
-| **Cloudflare** | DNS + Tunnel + CDN | ⬜ Perlu daftar |
+| **Cloudflare** | DNS + Tunnel + CDN | ✅ Aktif (DNS managed) |
 | **cloudflared** | CLI tunnel ke laptop | ⬜ Perlu install |
 | **Node.js** (opsional) | Untuk backend project | ❓ Cek dulu |
 
@@ -273,3 +274,51 @@ Setelah domain aktif, tambahkan DNS records di **Cloudflare Dashboard → DNS**:
 
 > [!NOTE]
 > **Biaya**: Semua setup ini **GRATIS** kecuali domain `gizzatara.space` yang sudah kamu beli. GitHub Pages gratis, Cloudflare free tier, Cloudflare Tunnel gratis.
+
+---
+
+## 🔒 CATATAN: Fix Sertifikat HTTPS (9 Juli 2026)
+
+### Masalah
+- Website `gizzatara.space` sudah bisa diakses tapi **tanpa HTTPS**
+- Di GitHub Pages Settings: "Enforce HTTPS" tidak bisa dicentang
+- Pesan error: *"Unavailable for your site because a certificate has not yet been issued for your domain"*
+- Sertifikat yang di-serve masih wildcard `*.github.io`, bukan sertifikat khusus untuk `gizzatara.space`
+
+### Penyebab
+GitHub Pages belum menerbitkan sertifikat Let's Encrypt karena domain belum di-verify di akun GitHub.
+
+### Solusi yang Berhasil
+
+**Langkah 1: Verify domain di GitHub**
+1. Buka https://github.com/settings/pages
+2. Klik "Add a domain" → masukkan `gizzatara.space`
+3. GitHub memberikan TXT record untuk verifikasi:
+   ```
+   Name:  _github-pages-challenge-gizzatara.gizzatara.space
+   Value: 69de5d09fccdf2e477dbf62d5dc0ed
+   ```
+
+**Langkah 2: Tambah TXT record di Cloudflare**
+1. Buka Cloudflare Dashboard → DNS → Records
+2. Klik "+ Add record"
+3. Isi:
+   - Type: `TXT`
+   - Name: `_github-pages-challenge-gizzatara`
+   - Content: `69de5d09fccdf2e477dbf62d5dc0ed`
+   - TTL: Auto
+4. Klik Save
+
+**Langkah 3: Verify & Enforce HTTPS**
+1. Kembali ke GitHub → klik Verify → berhasil
+2. Buka repo Settings → Pages → centang "Enforce HTTPS" → berhasil
+
+### Hasil
+- ✅ Sertifikat Let's Encrypt berhasil diterbitkan
+- ✅ Subject: `CN=gizzatara.space`
+- ✅ Issuer: Let's Encrypt (YR1)
+- ✅ Valid: 9 Juli 2026 — 7 Oktober 2026 (auto-renew)
+- ✅ HTTPS enforced — semua HTTP otomatis redirect ke HTTPS
+
+> [!TIP]
+> **Kalau sertifikat bermasalah lagi di masa depan**: Coba hapus custom domain di GitHub Pages Settings, tunggu 30 detik, lalu tambahkan ulang. Ini memaksa GitHub untuk re-issue sertifikat.
