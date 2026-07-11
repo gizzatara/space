@@ -588,21 +588,6 @@ nav {
   color: var(--accent-pink);
 }
 
-.game-instruction {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-  font-family: var(--font-head);
-  font-size: 10px;
-  color: var(--text-muted);
-  background: #000;
-  padding: 8px 20px;
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  z-index: 10;
-}
-
 /* ===== 9. PROJECTS SECTION ===== */
 #projects {
   padding: 100px 0;
@@ -627,23 +612,6 @@ nav {
   overflow: hidden;
 }
 
-.project-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(56, 189, 248, 0.25) 15%,
-    rgba(244, 63, 94, 0.25) 30%,
-    transparent 45%
-  );
-  background-size: 100% 300%;
-  background-position: 0 -200%;
-  pointer-events: none;
-  z-index: 5;
-}
-
 .project-card:hover {
   transform: translate(-6px, -6px);
   border-color: var(--border-active);
@@ -652,15 +620,6 @@ nav {
     6px 6px 0px var(--accent-cyan),
     9px 9px 0px #000;
   animation: card-glitch 0.25s steps(4, end) 1;
-}
-
-.project-card:hover::before {
-  animation: scan-sweep 1.5s steps(12, end) infinite;
-}
-
-@keyframes scan-sweep {
-  0% { background-position: 0 -200%; }
-  100% { background-position: 0 100%; }
 }
 
 @keyframes card-glitch {

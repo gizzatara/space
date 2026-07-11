@@ -67,7 +67,7 @@ Mekanisme permainan dirancang ulang total untuk mendukung **Mobile Touch Screen*
 
 * **Chromatic Split Shadow**: Saat di-hover, kartu proyek terangkat setinggi `6px` ke kiri atas dengan bayangan pixel art terpisah menjadi warna pink (`#f43f5e`) dan cyan (`#38bdf8`) untuk efek chromatic aberration 3D.
 * **Glitch Shake Feedback**: Saat pointer pertama kali masuk ke kartu, terjadi getaran dan pergantian hue warna (*glitch shake*) secara patah-patah selama `0.25` detik.
-* **Scanline Sweep Overlay**: Garis cahaya cyan/pink menyapu permukaan kartu dari atas ke bawah secara berulang selama kartu di-hover.
+* *(Catatan: Animasi scanline sweep overlay / cahaya berjalan telah dihapus demi kenyamanan visual).*
 
 ---
 
