@@ -41,6 +41,7 @@ Tombol **CRT** di pojok kanan atas navigasi kini memberikan transisi visual yang
   * Kursor membesar.
   * Ring luar berubah warna menjadi pink (`#f43f5e`).
   * Target dot di tengah berubah menjadi biru cyan (`#38bdf8`) dan membesar.
+* *(Catatan: Kursor kustom / crosshair otomatis dinonaktifkan sepenuhnya pada perangkat layar sentuh / mobile demi kenyamanan navigasi).*
 
 ---
 

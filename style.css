@@ -63,12 +63,24 @@ body {
   line-height: 1.4;
   overflow-x: hidden;
   min-height: 100vh;
-  cursor: none !important; /* Hide default cursor */
   image-rendering: pixelated;
 }
 
-a, button, input, select, textarea, .cursor-target {
-  cursor: none !important; /* Force custom cursor */
+/* Hide default cursor only on devices with a mouse (fine pointer) */
+@media (pointer: fine) {
+  body {
+    cursor: none !important;
+  }
+  a, button, input, select, textarea, .cursor-target {
+    cursor: none !important;
+  }
+}
+
+/* Hide custom crosshair cursor on touch/mobile devices */
+@media (pointer: coarse), (max-width: 768px) {
+  #target-cursor {
+    display: none !important;
+  }
 }
 
 .container {
