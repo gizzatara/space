@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ragdoll Cannon.js</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { overflow: hidden; background: #000; }
+  canvas { display: block; }
+  #info {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    color: #fff; font-family: monospace; font-size: 13px;
+    background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 6px;
+    pointer-events: none; user-select: none;
+  }
+  #controls {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; z-index: 20;
+  }
+  #controls button {
+    font-family: monospace; font-size: 13px; font-weight: bold;
+    padding: 6px 16px; border: 2px solid #555; border-radius: 6px;
+    background: rgba(0,0,0,0.7); color: #ccc; cursor: pointer;
+    transition: all 0.15s;
+  }
+  #controls button:hover { border-color: #aaa; color: #fff; }
+  #controls button.active { border-color: #4ade80; color: #4ade80; }
+  #status {
+    position: fixed; top: 50px; left: 50%; transform: translateX(-50%);
+    color: #4ade80; font-family: monospace; font-size: 12px;
+    pointer-events: none; user-select: none; z-index: 20;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #about {
+    position: fixed; top: 12px; left: 16px; z-index: 25;
+    color: #fff; font-family: monospace; font-size: 11px;
+    background: rgba(0,0,0,0.65); padding: 10px 14px; border-radius: 8px;
+    max-width: 290px; line-height: 1.55; pointer-events: none;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  #about h2 { font-size: 15px; margin: 0 0 6px 0; color: #4ade80; }
+  #about .key { color: #facc15; }
+  #about a { color: #60a5fa; text-decoration: none; pointer-events: auto; }
+  #about a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div id="about">
+  <h2>Ragdoll Cannon.js</h2>
+  8 ragdolls with physics skeleton + procedural walking<br>
+  powered by Three.js r160 &amp; Cannon.js 0.6.2
+  <br>
+  Based on <a href="https://codepen.io/BagIdea/pen/LYRPZew" target="_blank">ThreeJS Ex.4 Simple Ragdoll</a> by BagIdea
+  <br><br>
+  <span class="key">WASD</span> move player &nbsp; <span class="key">Mouse</span> aim<br>
+  <span class="key">Space</span> jump &nbsp; <span class="key">Click</span> play/pause &nbsp; <span class="key">R</span> reset<br>
+  <span class="key">L-drag</span> orbit &nbsp; <span class="key">R-drag</span> pan &nbsp; <span class="key">Scroll</span> zoom
+  <br><br>
+  <a href="https://github.com/gizzatara" target="_blank">GitHub</a> · <a href="https://gizzatara.space" target="_blank">gizzatara.space</a> · <a href="https://instagram.com/gizzatara" target="_blank">@gizzatara</a>
+</div>
+<div id="info">🖱 L-drag orbit &nbsp;|&nbsp; 🖱 R-drag pan &nbsp;|&nbsp; 🖱 scroll zoom &nbsp;|&nbsp; ⌨ Space=play/pause, R=reset</div>
+<div id="controls">
+  <button id="btn-play"  class="active" onclick="setSim('play')">▶ Play</button>
+  <button id="btn-pause"              onclick="setSim('pause')">⏸ Pause</button>
+  <button id="btn-reset"             onclick="setSim('reset')">⏹ Reset</button>
+</div>
+<div id="status"></div>
+
+<!-- Cannon.js (classic, global CANNON) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+
+<!-- Three.js via import map -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ─── Error display (biar keliatan kalo ada bug) ───
+window.addEventListener('error', (e) => {
+  document.body.innerHTML = '<pre style="color:#f88;background:#200;padding:20px;font:14px monospace;position:fixed;inset:0;z-index:9999;white-space:pre-wrap;">'
+    + e.message + '\n\nat ' + (e.filename||'') + ':' + e.lineno + ':' + e.colno
+    + '</pre>';
+});
+console.log('Module loaded ✓');
+
+// ─── Simulation state ───
+let simRunning = true;
+window.setSim = (mode) => {
+  const btns = { play: 'btn-play', pause: 'btn-pause', reset: 'btn-reset' };
+  const statusEl = document.getElementById('status');
+  const flash = (msg) => {
+    statusEl.textContent = msg; statusEl.style.opacity = '1';
+    clearTimeout(statusEl._t); statusEl._t = setTimeout(() => { statusEl.style.opacity = '0'; }, 800);
+  };
+
+  if (mode === 'play') {
+    simRunning = true;
+    flash('▶ Running');
+  } else if (mode === 'pause') {
+    simRunning = false;
+    flash('⏸ Paused');
+  } else if (mode === 'reset') {
+    simRunning = false;
+    for (const p of players) {
+      for (const body of p.bodyList) {
+        body.position.copy(body._initPos);
+        body.velocity.set(0, 0, 0);
+        body.angularVelocity.set(0, 0, 0);
+        body.quaternion.set(0, 0, 0, 1);
+      }
+      p._footLPos = p.footLBody.position.clone();
+      p._footRPos = p.footRBody.position.clone();
+      p._feetLocked = false;
+      p._walkPhase = Math.random() * Math.PI * 2;
+      p._walkAngle = p._initWalkAngle; // balik ke arah spawn
+      if (p._isPlayer) p._stepTime = 0;
+      p._prevRamp = undefined;
+    }
+    flash('⏹ Reset — press Play');
+  }
+  // Update button active states
+  for (const [m, id] of Object.entries(btns)) {
+    document.getElementById(id).classList.toggle('active', m === mode && mode !== 'reset');
+  }
+};
+
+// Keyboard shortcuts
+window.addEventListener('keydown', e => {
+  if (e.code === 'KeyR') { setSim('reset'); }
+});
+
+// ─── Player control ───
+const PLAYER_IDX = 7; // Hadi
+const keys = { w: false, a: false, s: false, d: false };
+const mouseGround = new THREE.Vector3();
+
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k in keys) { keys[k] = true; e.preventDefault(); }
+  // Space → jump (player only, single press)
+  if (e.code === 'Space') { e.preventDefault(); keys._jump = true; }
+});
+window.addEventListener('keyup', e => {
+  const k = e.key.toLowerCase();
+  if (k in keys) { keys[k] = false; e.preventDefault(); }
+});
+window.addEventListener('mousemove', e => {
+  const mouse = new THREE.Vector2(
+    (e.clientX / window.innerWidth) * 2 - 1,
+    -(e.clientY / window.innerHeight) * 2 + 1
+  );
+  const rc = new THREE.Raycaster();
+  rc.setFromCamera(mouse, camera);
+  const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const pt = new THREE.Vector3();
+  if (rc.ray.intersectPlane(plane, pt)) mouseGround.copy(pt);
+});
+
+// ─── Orbit + Pan Controls (L-drag orbit, R-drag pan, scroll zoom) ───
+const orbitTarget = new THREE.Vector3(0, 0.8, 0);
+let cameraYaw = 0, cameraPitch = 0.35, cameraDist = 12;
+let isDragging = false, isPanning = false, prevMouse = { x: 0, y: 0 };
+let clickStart  = { x: 0, y: 0 };
+
+window.addEventListener('mousedown', e => {
+  if (e.button === 2 || e.button === 1) { isPanning = true; }
+  else if (e.button === 0)           { isDragging = true; }
+  prevMouse.x = e.clientX; prevMouse.y = e.clientY;
+  clickStart.x = e.clientX; clickStart.y = e.clientY;
+});
+window.addEventListener('mouseup', e => {
+  // Click (no drag) → toggle pause
+  const dx = e.clientX - clickStart.x;
+  const dy = e.clientY - clickStart.y;
+  if (Math.abs(dx) < 3 && Math.abs(dy) < 3) {
+    setSim(simRunning ? 'pause' : 'play');
+  }
+  isDragging = false; isPanning = false;
+});
+window.addEventListener('contextmenu', e => e.preventDefault()); // block right-click menu
+window.addEventListener('mousemove', e => {
+  const dx = e.clientX - prevMouse.x;
+  const dy = e.clientY - prevMouse.y;
+  if (isDragging) {
+    cameraYaw   -= dx * 0.005;
+    cameraPitch += dy * 0.005;
+    cameraPitch  = Math.max(-1.4, Math.min(1.4, cameraPitch));
+  }
+  if (isPanning) {
+    const right = new THREE.Vector3();
+    camera.getWorldDirection(right);
+    const camRight = new THREE.Vector3(-Math.cos(cameraYaw), 0, Math.sin(cameraYaw)).normalize();
+    const camFwd   = new THREE.Vector3(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw)).normalize();
+    orbitTarget.addScaledVector(camRight, -dx * 0.02 * cameraDist * 0.05);
+    orbitTarget.addScaledVector(camFwd,   -dy * 0.02 * cameraDist * 0.05);
+  }
+  prevMouse.x = e.clientX; prevMouse.y = e.clientY;
+});
+window.addEventListener('wheel', e => {
+  cameraDist += e.deltaY * 0.01;
+  cameraDist  = Math.max(3, Math.min(40, cameraDist));
+}, { passive: true });
+
+// ─── Helper: Box Mesh ───
+function Box(sizeX = 1, sizeY = 1, sizeZ = 1, color = 0xffffff) {
+  const geo = new THREE.BoxGeometry(sizeX, sizeY, sizeZ);
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.0 });
+  return new THREE.Mesh(geo, mat);
+}
+
+// ─── Helper: Box Physics Body ───
+function BoxBody(sizeX = 0.5, sizeY = 0.5, sizeZ = 0.5, mass = 1) {
+  const shape = new CANNON.Box(new CANNON.Vec3(sizeX, sizeY, sizeZ));
+  return new CANNON.Body({ shape, mass });
+}
+
+// ─── Palet warna per karakter ───
+const PALETTES = [
+  { skin: 0xe9c8bc, shirt: 0x0055ff, pants: 0x1a1a2e, foot: 0x2d2d44, name: 'BIRU' },
+  { skin: 0xd69d70, shirt: 0xFF5500, pants: 0x2e1a0f, foot: 0x3d2a1a, name: 'ORANGE' },
+  { skin: 0x88583b, shirt: 0x33cc33, pants: 0x1a331a, foot: 0x2d442d, name: 'HIJAU' },
+  { skin: 0xf5d0c0, shirt: 0xdd2222, pants: 0x1a1a1a, foot: 0x2a2a2a, name: 'MERAH' },
+  { skin: 0xc8a882, shirt: 0xeebb00, pants: 0x332200, foot: 0x443300, name: 'KUNING' },
+  { skin: 0xe0c0a0, shirt: 0xcc44cc, pants: 0x221133, foot: 0x332244, name: 'UNGU' },
+  { skin: 0xf0dcc8, shirt: 0xffffff, pants: 0x333333, foot: 0x444444, name: 'PUTIH' },
+  { skin: 0x8b6b4a, shirt: 0x666666, pants: 0x1a1a1a, foot: 0x2a2a2a, name: 'COKLAT' },
+];
+const NAMES = ['Andi', 'Budi', 'Citra', 'Dewi', 'Eko', 'Fajar', 'Gita', 'Hadi'];
+const SPEEDS = [9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0];
+
+// ─── Name label container ───
+const labelContainer = document.createElement('div');
+labelContainer.id = 'labels';
+Object.assign(labelContainer.style, {
+  position: 'fixed', inset: '0', pointerEvents: 'none', zIndex: '10'
+});
+document.body.appendChild(labelContainer);
+
+// ─── Character (Ragdoll) ───
+class Character {
+  constructor(x = 0, y = 0, z = 0, paletteIdx = 0, walkSpeed = 3.5, name = '?') {
+    this.meshList  = [];
+    this.bodyList  = [];
+    this.jointList = [];
+    this.walkSpeed = walkSpeed;
+    this.labelName = name;
+
+    const pal  = PALETTES[paletteIdx % PALETTES.length];
+    const skin  = pal.skin;
+    const shirt = pal.shirt;
+    const pants = pal.pants;
+    const foot  = pal.foot;
+
+    // ── Body parts (mesh + physics) ──
+    const addPart = (name, w, h, d, color, px, py, pz, bw, bh, bd) => {
+      const mesh = new Box(w, h, d, color);
+      mesh.position.set(px + x, py + y, pz + z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      const body = new BoxBody(bw, bh, bd);
+      body.position.copy(mesh.position);
+      this[name] = mesh;
+      this[name + 'Body'] = body;
+      this.meshList.push(mesh);
+      this.bodyList.push(body);
+    };
+
+    addPart('head',           0.5, 0.5, 0.5, skin,   0,    2.18, 0,  0.25, 0.25, 0.25);
+    addPart('chest',          0.6, 0.6, 0.3, shirt,  0,    1.61, 0,  0.30, 0.30, 0.15);
+    addPart('hips',           0.6, 0.3, 0.3, shirt,  0,    1.14, 0,  0.30, 0.15, 0.15);
+    addPart('upperShoulderL', 0.4, 0.2, 0.2, shirt,  0.51, 1.80, 0,  0.20, 0.10, 0.10);
+    addPart('lowerShoulderL', 0.4, 0.2, 0.2, skin,   0.92, 1.80, 0,  0.20, 0.10, 0.10);
+    addPart('handL',          0.2, 0.2, 0.2, skin,   1.23, 1.80, 0,  0.10, 0.10, 0.10);
+    addPart('upperShoulderR', 0.4, 0.2, 0.2, shirt, -0.51, 1.80, 0,  0.20, 0.10, 0.10);
+    addPart('lowerShoulderR', 0.4, 0.2, 0.2, skin,  -0.92, 1.80, 0,  0.20, 0.10, 0.10);
+    addPart('handR',          0.2, 0.2, 0.2, skin,  -1.23, 1.80, 0,  0.10, 0.10, 0.10);
+    addPart('upperLegL',      0.2, 0.4, 0.2, pants,  0.15, 0.78, 0,  0.10, 0.20, 0.10);
+    addPart('lowerLegL',      0.2, 0.4, 0.2, skin,   0.15, 0.36, 0,  0.10, 0.20, 0.10);
+    addPart('footL',          0.2, 0.12, 0.35, foot, 0.15, 0.08, 0.05, 0.10, 0.06, 0.1525);
+    addPart('upperLegR',      0.2, 0.4, 0.2, pants, -0.15, 0.78, 0,  0.10, 0.20, 0.10);
+    addPart('lowerLegR',      0.2, 0.4, 0.2, skin,  -0.15, 0.36, 0,  0.10, 0.20, 0.10);
+    addPart('footR',          0.2, 0.12, 0.35, foot, -0.15, 0.08, 0.05, 0.10, 0.06, 0.1525);
+
+    // ── Joints ──
+    const ctJoint = (bodyA, bodyB, pivotA, pivotB, axisA, axisB, angle, twist) => {
+      this.jointList.push(new CANNON.ConeTwistConstraint(bodyA, bodyB, {
+        pivotA: new CANNON.Vec3(...pivotA),
+        pivotB: new CANNON.Vec3(...pivotB),
+        axisA, axisB, angle, twistAngle: twist,
+      }));
+    };
+
+    ctJoint(this.headBody,   this.chestBody,           [0,-0.25,0], [0,0.3,0],   CANNON.Vec3.UNIT_Y, CANNON.Vec3.UNIT_Y, Math.PI/5, Math.PI/12);
+    ctJoint(this.chestBody,  this.hipsBody,            [0,-0.3,0],  [0,0.075,0], CANNON.Vec3.UNIT_Y, CANNON.Vec3.UNIT_Y, Math.PI/4, Math.PI/8);
+    ctJoint(this.chestBody,  this.upperShoulderLBody,  [0.3,0.25,0],[-0.2,0,0],  CANNON.Vec3.UNIT_X, CANNON.Vec3.UNIT_X, Math.PI/3, Math.PI/8);
+    ctJoint(this.upperShoulderLBody, this.lowerShoulderLBody, [0.2,0,0],[-0.2,0,0],  CANNON.Vec3.UNIT_X, CANNON.Vec3.UNIT_X, Math.PI/4, Math.PI/8);
+    ctJoint(this.lowerShoulderLBody, this.handLBody,         [0.2,0,0],[-0.1,0,0],  CANNON.Vec3.UNIT_X, CANNON.Vec3.UNIT_X, Math.PI/8, Math.PI/8);
+    ctJoint(this.chestBody,  this.upperShoulderRBody, [-0.3,0.25,0],[0.2,0,0],   CANNON.Vec3.UNIT_X, CANNON.Vec3.UNIT_X, Math.PI/3, Math.PI/8);
+    ctJoint(this.upperShoulderRBody, this.lowerShoulderRBody, [-0.2,0,0],[0.2,0,0],  CANNON.Vec3.UNIT_X, CANNON.Vec3.UNIT_X, Math.PI/4, Math.PI/8);
+    ctJoint(this.lowerShoulderRBody, this.handRBody,         [-0.2,0,0],[0.1,0,0],  CANNON.Vec3.UNIT_X, CANNON.Vec3.UNIT_X, Math.PI/8, Math.PI/8);
+    ctJoint(this.hipsBody,   this.upperLegLBody,       [0.15,-0.15,0],[0,0.2,0],  CANNON.Vec3.UNIT_Y, CANNON.Vec3.UNIT_Y, Math.PI/4, Math.PI/8);
+    ctJoint(this.upperLegLBody, this.lowerLegLBody,    [0,-0.2,0],  [0,0.2,0],  CANNON.Vec3.UNIT_X, CANNON.Vec3.UNIT_X, Math.PI/2, Math.PI/16);
+    ctJoint(this.lowerLegLBody, this.footLBody,         [0,-0.2,0],  [0,0.06,-0.04], CANNON.Vec3.UNIT_Y, CANNON.Vec3.UNIT_Y, Math.PI/8, Math.PI/8);
+    ctJoint(this.hipsBody,   this.upperLegRBody,       [-0.15,-0.15,0],[0,0.2,0], CANNON.Vec3.UNIT_Y, CANNON.Vec3.UNIT_Y, Math.PI/4, Math.PI/8);
+    ctJoint(this.upperLegRBody, this.lowerLegRBody,    [0,-0.2,0],  [0,0.2,0],  CANNON.Vec3.UNIT_X, CANNON.Vec3.UNIT_X, Math.PI/2, Math.PI/16);
+    ctJoint(this.lowerLegRBody, this.footRBody,         [0,-0.2,0],  [0,0.06,-0.04], CANNON.Vec3.UNIT_Y, CANNON.Vec3.UNIT_Y, Math.PI/8, Math.PI/8);
+
+    // ── Facial features (child of head) ──
+    const eyeL     = new Box(0.04, 0.04, 0.04, 0x000000); eyeL.position.set(0.11, 0.09, 0.25);
+    const eyeBrowL = new Box(0.13, 0.05, 0.04, 0x000000); eyeBrowL.position.set(0.12, 0.15, 0.25);
+    const eyeR     = new Box(0.04, 0.04, 0.04, 0x000000); eyeR.position.set(-0.11, 0.09, 0.25);
+    const eyeBrowR = new Box(0.13, 0.05, 0.04, 0x000000); eyeBrowR.position.set(-0.12, 0.15, 0.25);
+    const mouth    = new Box(0.2, 0.05, 0.04, 0xff5555);   mouth.position.set(0, -0.15, 0.25);
+    const ear      = new Box(0.65, 0.15, 0.05, skin);       ear.position.set(0, 0, 0);
+    const hairT    = new Box(0.4, 0.5, 0.6, 0x000000);      hairT.position.set(0, 0.2, -0.1);
+    const hairB    = new Box(0.6, 0.5, 0.35, 0x000000);     hairB.position.set(0, 0.1, -0.2);
+
+    this.head.add(eyeL, eyeBrowL, eyeR, eyeBrowR, mouth, ear, hairT, hairB);
+
+    // ── Front markers: depan merah/oranye, belakang polos (debug rotasi) ──
+    const chestFront = new Box(0.15, 0.25, 0.04, 0xff4444);
+    chestFront.position.set(0, 0.05, 0.17);
+    this.chest.add(chestFront);
+    const hipsFront = new Box(0.15, 0.1, 0.04, 0xffaa00);
+    hipsFront.position.set(0, 0, 0.17);
+    this.hips.add(hipsFront);
+
+    // ── Foot tip markers: ujung kaki cyan (debug arah) ──
+    const footLTip = new Box(0.04, 0.03, 0.06, 0x00ffcc);
+    footLTip.position.set(0, 0, 0.18);
+    this.footL.add(footLTip);
+    const footRTip = new Box(0.04, 0.03, 0.06, 0x00ffcc);
+    footRTip.position.set(0, 0, 0.18);
+    this.footR.add(footRTip);
+
+    // ── Simpan posisi awal kaki untuk anchor ──
+    this._footLPos = this.footLBody.position.clone();
+    this._footRPos = this.footRBody.position.clone();
+    this._feetLocked = false;
+    this._walkPhase = Math.random() * Math.PI * 2;
+    this._walkAngle = (Math.random() - 0.5) * 0.4;
+    this._jumping = false;
+  }
+
+  // ── Stand + Walk ──
+  balance(t) {
+    // ── 0. Jumping: skip foot-lock & walk ──
+    if (this._jumping) {
+      // Skip locking + walking; cuma torque postur tetap jalan
+    } else {
+
+    // ── 1. Kunci kaki ke tanah (sekali saja) ──
+    if (!this._feetLocked) {
+      for (const foot of [this.footLBody, this.footRBody]) {
+        foot.type = CANNON.Body.KINEMATIC;
+        foot.position.y = 0.02;
+        foot.velocity.set(0, 0, 0);
+        foot.angularVelocity.set(0, 0, 0);
+      }
+      this._feetLocked = true;
+    }
+
+    // ── 2. Jalan: ramp-based, planted foot DIAM, no slide ──
+    if (this._feetLocked) {
+      const stride = 0.75;
+      const speed = this.walkSpeed;
+      const dx = Math.sin(this._walkAngle);
+      const dz = Math.cos(this._walkAngle);
+
+      const stepPhase = ((this._isPlayer ? (this._stepTime || 0) : t) * speed + this._walkPhase) % (2 * Math.PI);
+      const halfCycle = stepPhase % Math.PI;       // 0 → π
+      const ramp      = halfCycle / Math.PI;        // 0 → 1
+
+      // Deteksi ramp selesai → advance referensi kaki yang baru mendarat
+      const prevRamp = this._prevRamp ?? 0;
+      if (prevRamp > 0.85 && ramp < 0.15) {
+        if (stepPhase < Math.PI) {
+          this._footRPos.x += dx * stride;
+          this._footRPos.z += dz * stride;
+        } else {
+          this._footLPos.x += dx * stride;
+          this._footLPos.z += dz * stride;
+        }
+      }
+      this._prevRamp = ramp;
+
+      // Posisikan kaki
+      const lift = Math.sin(ramp * Math.PI) * 0.15;
+      if (stepPhase < Math.PI) {
+        this.footLBody.position.x = this._footLPos.x + dx * stride * ramp;
+        this.footLBody.position.z = this._footLPos.z + dz * stride * ramp;
+        this.footLBody.position.y = 0.02 + lift;
+        this.footRBody.position.x = this._footRPos.x;
+        this.footRBody.position.z = this._footRPos.z;
+        this.footRBody.position.y = 0.02;
+      } else {
+        this.footRBody.position.x = this._footRPos.x + dx * stride * ramp;
+        this.footRBody.position.z = this._footRPos.z + dz * stride * ramp;
+        this.footRBody.position.y = 0.02 + lift;
+        this.footLBody.position.x = this._footLPos.x;
+        this.footLBody.position.z = this._footLPos.z;
+        this.footLBody.position.y = 0.02;
+      }
+
+      // Batas area
+      const cx = (this._footLPos.x + this._footRPos.x) / 2;
+      const cz = (this._footLPos.z + this._footRPos.z) / 2;
+      if ((Math.abs(cx) > 14 || Math.abs(cz) > 14) && !this._turnCD) {
+        this._walkAngle += Math.PI + (Math.random() - 0.5) * 0.6;
+        // Swap foot roles (not positions) + cooldown — prevents crossed feet & re-trigger
+        const tmp = this._footLPos.clone();
+        this._footLPos.copy(this._footRPos);
+        this._footRPos.copy(tmp);
+        this.footLBody.position.copy(this._footLPos);
+        this.footRBody.position.copy(this._footRPos);
+        this._turnCD = t + 2.0; // cooldown 2 detik
+      }
+      if (this._turnCD && t > this._turnCD) this._turnCD = null;
+    }
+    } // end else (not jumping)
+
+    // ── 2.5. Yaw alignment: badan + kepala ──
+    if (this._feetLocked) {
+      const targetFwd = this._isPlayer
+        ? new CANNON.Vec3(Math.sin(this._walkAngle), 0, Math.cos(this._walkAngle))
+        : new CANNON.Vec3(0, 0, 1); // NPC: selalu utara (+Z)
+      const localFwd = new CANNON.Vec3(0, 0, 1);
+      const worldFwd = new CANNON.Vec3();
+      const yawT = new CANNON.Vec3();
+
+      for (const b of [this.chestBody, this.hipsBody, this.headBody]) {
+        b.quaternion.vmult(localFwd, worldFwd);
+        worldFwd.y = 0;
+        const flen = worldFwd.norm();
+        if (flen < 0.001) continue;
+        worldFwd.scale(1 / flen, worldFwd);
+
+        const dot = Math.min(1, Math.max(-1, worldFwd.dot(targetFwd)));
+        const ang = Math.acos(dot);
+        if (ang < 0.05) continue;
+
+        worldFwd.cross(targetFwd, yawT);
+        const n = yawT.norm();
+        if (n < 0.0001) continue;
+        yawT.scale(1 / n, yawT);
+        const ym = (b === this.chestBody) ? 45 : (b === this.hipsBody) ? 35 : 20;
+        yawT.scale(ang * ym, yawT);
+        b.torque.vadd(yawT, b.torque);
+      }
+    }
+
+    // ── 3. Torque: spine + kaki + lengan ──
+    const armBodies = [this.upperShoulderLBody, this.lowerShoulderLBody, this.handLBody,
+                       this.upperShoulderRBody, this.lowerShoulderRBody, this.handRBody];
+    const up = CANNON.Vec3.UNIT_Y;
+    const fwdUp = new CANNON.Vec3(Math.sin(this._walkAngle)*0.25, 1, Math.cos(this._walkAngle)*0.25);
+    fwdUp.normalize(); // target agak depan sesuai arah jalan
+    const localUp = new CANNON.Vec3(0, 1, 0);
+    const worldUp = new CANNON.Vec3();
+    const torque = new CANNON.Vec3();
+
+    for (const b of this.bodyList) {
+      if (b.type === CANNON.Body.KINEMATIC) continue;
+      if (armBodies.includes(b)) {
+        // Lengan: redam kuat, gantung natural
+        b.angularVelocity.scale(0.85, b.angularVelocity);
+        continue;
+      }
+      // Spine + kaki: torque ke target
+      const target = (b === this.chestBody || b === this.headBody) ? fwdUp : up;
+      b.quaternion.vmult(localUp, worldUp);
+      const dot = Math.min(1, Math.max(-1, worldUp.dot(target)));
+      const angle = Math.acos(dot);
+      if (angle < 0.01) continue;
+      worldUp.cross(target, torque);
+      const len = torque.norm();
+      if (len < 0.0001) continue;
+      torque.scale(1 / len, torque);
+      const tMult = (b === this.chestBody) ? 180 : (b === this.headBody) ? 60 : 50;
+      torque.scale(angle * tMult, torque);
+      b.torque.vadd(torque, b.torque);
+      b.angularVelocity.scale(0.97, b.angularVelocity);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SCENE SETUP
+// ═══════════════════════════════════════════
+const scene  = new THREE.Scene();
+scene.background = new THREE.Color(0xe0e0e0);
+scene.fog = new THREE.Fog(0xe0e0e0, 0, 60);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 200);
+scene.add(camera);
+camera.position.set(0, 2.5, 15);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ── Lighting ──
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dirLight = new THREE.DirectionalLight(0xffffff, 3);
+dirLight.castShadow = true;
+dirLight.position.set(10, 20, 10);
+dirLight.shadow.mapSize.set(1024, 1024);
+dirLight.shadow.camera.near = 0.5;
+dirLight.shadow.camera.far = 100;
+dirLight.shadow.camera.left = -20;
+dirLight.shadow.camera.right = 20;
+dirLight.shadow.camera.top = 20;
+dirLight.shadow.camera.bottom = -20;
+scene.add(dirLight);
+
+// ── Ground ──
+const grid = new THREE.GridHelper(30, 30, 0x888888, 0xcccccc);
+grid.material.opacity = 0.3;
+grid.material.transparent = true;
+scene.add(grid);
+
+// ✅ PlaneGeometry (bukan PlaneBufferGeometry)
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(200, 200),
+  new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.9 })
+);
+floor.receiveShadow = true;
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -0.01;
+scene.add(floor);
+
+// ═══════════════════════════════════════════
+//  PHYSICS WORLD
+// ═══════════════════════════════════════════
+const world = new CANNON.World();
+world.gravity.set(0, -9.82, 0);
+world.broadphase = new CANNON.NaiveBroadphase();
+world.solver.iterations = 10;
+
+const groundBody = new CANNON.Body({ shape: new CANNON.Plane(), mass: 0 });
+groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+world.addBody(groundBody);
+
+// ═══════════════════════════════════════════
+//  SPAWN CHARACTERS
+// ═══════════════════════════════════════════
+const players = [];
+const COUNT = 8;
+
+// Spawn lingkaran, radius 4, arah beda tiap karakter (8 penjuru)
+const RADIUS = 4;
+for (let i = 0; i < COUNT; i++) {
+  const angle = i * Math.PI * 2 / COUNT;
+  const player = new Character(
+    Math.cos(angle) * RADIUS,
+    0,
+    Math.sin(angle) * RADIUS,
+    i, SPEEDS[i], NAMES[i]
+  );
+  player._walkAngle = player._initWalkAngle = i * Math.PI / 4; // 0=N, 1=NE, 2=E, …
+  if (i === PLAYER_IDX) { player._isPlayer = true; player._stepTime = 0; }
+  for (const mesh of player.meshList)  scene.add(mesh);
+  for (const body of player.bodyList)  { world.addBody(body); body._initPos = body.position.clone(); }
+  for (const joint of player.jointList) world.addConstraint(joint);
+
+  // ── Name label ──
+  const label = document.createElement('div');
+  const pc = PALETTES[i];
+  label.textContent = (i === PLAYER_IDX) ? '▶ ' + NAMES[i] : NAMES[i];
+  Object.assign(label.style, {
+    position: 'absolute', color: '#fff', fontFamily: 'monospace',
+    fontSize: '12px', fontWeight: 'bold', textAlign: 'center',
+    textShadow: '1px 1px 2px #000', whiteSpace: 'nowrap',
+    transform: 'translate(-50%, -50%)', pointerEvents: 'none',
+  });
+  if (i === PLAYER_IDX) label.style.color = '#4ade80';
+  labelContainer.appendChild(label);
+  player._labelEl = label;
+
+  players.push(player);
+}
+
+// ── Compass arrow di lantai (utara = +Z) ──
+const compMat = new THREE.MeshStandardMaterial({ color: 0xff6600, roughness: 0.4, emissive: 0x220800 });
+const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 1.4), compMat);
+shaft.position.set(0, 0.04, 0.7); shaft.receiveShadow = true; scene.add(shaft);
+const tipG = new THREE.BoxGeometry(0.05, 0.04, 0.4);
+const tipL = new THREE.Mesh(tipG, compMat);
+tipL.position.set(0.12, 0.04, 1.25); tipL.rotation.y = -0.55; tipL.receiveShadow = true; scene.add(tipL);
+const tipR = new THREE.Mesh(tipG, compMat);
+tipR.position.set(-0.12, 0.04, 1.25); tipR.rotation.y = 0.55; tipR.receiveShadow = true; scene.add(tipR);
+
+// ── Player ground ring ──
+const playerRing = new THREE.Mesh(
+  new THREE.TorusGeometry(0.35, 0.04, 8, 16),
+  new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.3, emissive: 0x003300 })
+);
+playerRing.rotation.x = -Math.PI / 2;
+playerRing.position.y = 0.04;
+playerRing.receiveShadow = true;
+scene.add(playerRing);
+
+// ═══════════════════════════════════════════
+//  ANIMATION LOOP
+// ═══════════════════════════════════════════
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const dt = Math.min(clock.getDelta(), 1 / 30); // cap delta
+
+  if (simRunning) {
+    // Step physics
+    world.step(1 / 60, dt);
+  }
+
+  // Sync mesh ↔ body
+  for (const p of players) {
+    for (let i = 0; i < p.bodyList.length; i++) {
+      p.meshList[i].position.copy(p.bodyList[i].position);
+      p.meshList[i].quaternion.copy(p.bodyList[i].quaternion);
+    }
+    // ── Update name label position ──
+    if (p._labelEl) {
+      const hp = p.headBody.position;
+      const worldPos = new THREE.Vector3(hp.x, hp.y + 0.5, hp.z);
+      worldPos.project(camera);
+      const sx = (worldPos.x * 0.5 + 0.5) * innerWidth;
+      const sy = (-worldPos.y * 0.5 + 0.5) * innerHeight;
+      if (worldPos.z < 1) {
+        p._labelEl.style.left = sx + 'px';
+        p._labelEl.style.top  = sy + 'px';
+        p._labelEl.style.display = '';
+      } else {
+        p._labelEl.style.display = 'none';
+      }
+    }
+  }
+
+  if (simRunning) {
+    // ── Player control (Hadi, idx 7) ──
+    const player = players[PLAYER_IDX];
+    if (player && player._isPlayer) {
+      const cx = player.chestBody.position.x;
+      const cz = player.chestBody.position.z;
+
+      // ── Jump ──
+      if (keys._jump) {
+        keys._jump = false;
+        if (!player._jumping && player._feetLocked) {
+          // Normalize stance X biar simetris sebelum lompat
+          const midX = (player.footLBody.position.x + player.footRBody.position.x) / 2;
+          player._footLPos.x = midX + 0.15;
+          player._footRPos.x = midX - 0.15;
+          player.footLBody.position.x = player._footLPos.x;
+          player.footRBody.position.x = player._footRPos.x;
+
+          player._jumping = true;
+          player._feetLocked = false;
+          player._wasAirborne = false; // reset, baru boleh landing kalau udah pernah di udara
+          player.footLBody.type = CANNON.Body.DYNAMIC;
+          player.footRBody.type = CANNON.Body.DYNAMIC;
+          const up = new CANNON.Vec3(0, 22, 0);
+          player.hipsBody.applyImpulse(up, player.hipsBody.position);
+          player.chestBody.applyImpulse(up, player.chestBody.position);
+          player.upperLegLBody.applyImpulse(new CANNON.Vec3(0, 10, 0), player.upperLegLBody.position);
+          player.upperLegRBody.applyImpulse(new CANNON.Vec3(0, 10, 0), player.upperLegRBody.position);
+        }
+      }
+
+      // ── Walk ──
+      const w = keys.w, a = keys.a, s = keys.s, d = keys.d;
+      if (w || a || s || d) {
+        // Aim ke kursor (hanya pas tombol ditekan)
+        const aimAngle = Math.atan2(mouseGround.x - cx, mouseGround.z - cz);
+        let lx = 0, lz = 0;
+        if (w) lz += 1;
+        if (s) lz -= 1;
+        if (a) lx -= 1;
+        if (d) lx += 1;
+        const c = Math.cos(aimAngle), sn = Math.sin(aimAngle);
+        const wx = lx * c - lz * sn;
+        const wz = lx * sn + lz * c;
+        player._walkAngle = Math.atan2(wx, wz);
+        player._stepTime += dt;
+      }
+      player.walkSpeed = (w || a || s || d) ? 9.0 : 0;
+    }
+
+    // ── Stand + Walk controller ──
+    const now = performance.now() * 0.001;
+    for (const p of players) p.balance(now);
+
+    // ── Landing detection for player ──
+    const pl = players[PLAYER_IDX];
+    if (pl && pl._jumping) {
+      // Gentle nudge: jaga stance kaki gak melebar, tapi bisa gerak horizontal
+      const midX = (pl.footLBody.position.x + pl.footRBody.position.x) / 2;
+      pl.footLBody.velocity.x += (midX + 0.15 - pl.footLBody.position.x) * 30;
+      pl.footRBody.velocity.x += (midX - 0.15 - pl.footRBody.position.x) * 30;
+
+      const footY = (pl.footLBody.position.y + pl.footRBody.position.y) / 2;
+      if (footY > 0.15) pl._wasAirborne = true; // beneran udah ninggal tanah
+      if (pl._wasAirborne && footY < 0.08) {
+        pl._jumping = false;
+        pl._feetLocked = false;
+        pl._footLPos.copy(pl.footLBody.position);
+        pl._footRPos.copy(pl.footRBody.position);
+      }
+    }
+  }
+
+  // Orbit camera (spherical → cartesian, no pivot)
+  camera.position.set(
+    orbitTarget.x + cameraDist * Math.cos(cameraPitch) * Math.sin(cameraYaw),
+    orbitTarget.y + cameraDist * Math.sin(cameraPitch),
+    orbitTarget.z + cameraDist * Math.cos(cameraPitch) * Math.cos(cameraYaw)
+  );
+  camera.lookAt(orbitTarget);
+
+  // Update player ring position
+  const pp = players[PLAYER_IDX];
+  if (pp && pp._isPlayer) {
+    playerRing.position.x = pp.chestBody.position.x;
+    playerRing.position.z = pp.chestBody.position.z;
+  }
+
+  renderer.render(scene, camera);
+}
+
+animate();
+</script>
+</body>
+</html>
